@@ -1,0 +1,10 @@
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": "Hello, tell me a joke"
+        }
+    ],
+    "model": "gemini-2.5-flash",
+    "stream": false
+}

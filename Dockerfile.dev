@@ -1,0 +1,44 @@
+FROM node:22-bookworm
+
+WORKDIR /app
+
+# Enable corepack to use the correct yarn version
+RUN corepack enable
+
+# Install Rust toolchain
+RUN apt-get update && apt-get install -y curl build-essential
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Copy source code
+COPY . .
+
+# Install dependencies
+RUN yarn install
+
+# Build native module explicitly to ensure Linux binary is generated
+RUN rm -f packages/backend/native/server-native.node
+RUN yarn workspace @affine/server-native build
+RUN ls -l packages/backend/native/server-native.node
+
+# Build reader dependency
+RUN yarn workspace @affine/reader build
+
+# Copy frontend assets from official image
+COPY --from=ghcr.io/toeverything/affine-graphql:stable /app/static /app/packages/backend/server/static
+
+# Fix native module name mismatch
+RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.x64.node || true
+
+# Build the server
+RUN yarn workspace @affine/server build
+
+# Set environment variables
+ENV PORT=3010
+ENV NODE_ENV=production
+
+# Expose port
+EXPOSE 3010
+
+# Run the server
+CMD ["node", "packages/backend/server/dist/main.js"]
