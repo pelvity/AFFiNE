@@ -119,13 +119,27 @@ export class GeminiWebAPIProvider extends CopilotProvider<GeminiWebAPIConfig> {
     }
 
     protected override async setup() {
+        // DEBUG: Write to log file
+        const fs = await import('fs');
+        const logFile = 'c:\\Users\\admin\\ProjectsIT\\personal\\AFFiNE\\gemini-debug.log';
+        const logDebug = (msg: string, data?: any) => {
+            const timestamp = new Date().toISOString();
+            const logLine = `[${timestamp}] ${msg} ${data ? JSON.stringify(data) : ''}\n`;
+            try { fs.appendFileSync(logFile, logLine); } catch (e) { }
+        };
+
+        logDebug('🚀 GeminiWebAPIProvider.setup() called');
+
         super.setup();
 
         if (!this.configured()) {
+            logDebug('❌ Not configured');
             return;
         }
 
         // Create an OpenAI-compatible client that points to our bridge service
+        logDebug('🔌 Connecting to bridge at:', this.config.baseURL);
+
         this.instance = createOpenAICompatible({
             name: 'gemini-bridge',
             apiKey: this.config.apiKey || 'bridge-service', // dummy key
@@ -139,12 +153,14 @@ export class GeminiWebAPIProvider extends CopilotProvider<GeminiWebAPIConfig> {
             );
 
             if (!response.ok) {
+                logDebug('❌ Health check failed:', response.status);
                 throw new Error(
                     `Bridge service health check failed: ${response.status}`
                 );
             }
 
             const data: any = await response.json();
+            logDebug('✅ Health check passed', data);
 
             if (!data.client_initialized) {
                 this.logger.warn(
@@ -154,6 +170,7 @@ export class GeminiWebAPIProvider extends CopilotProvider<GeminiWebAPIConfig> {
                 this.logger.log('Gemini WebAPI bridge connection verified');
             }
         } catch (error) {
+            logDebug('❌ Connection error:', error);
             this.logger.error(
                 'Failed to connect to Gemini WebAPI bridge service',
                 error
@@ -198,6 +215,17 @@ export class GeminiWebAPIProvider extends CopilotProvider<GeminiWebAPIConfig> {
         messages: PromptMessage[],
         options: CopilotChatOptions = {}
     ): Promise<string> {
+        // DEBUG: Write to log file
+        const fs = await import('fs');
+        const logFile = 'c:\\Users\\admin\\ProjectsIT\\personal\\AFFiNE\\gemini-debug.log';
+        const logDebug = (msg: string, data?: any) => {
+            const timestamp = new Date().toISOString();
+            const logLine = `[${timestamp}] ${msg} ${data ? JSON.stringify(data) : ''}\n`;
+            try { fs.appendFileSync(logFile, logLine); } catch (e) { }
+        };
+
+        logDebug('🚀 text() called', { model: cond });
+
         if (!this.instance) {
             throw new CopilotProviderNotSupported({
                 provider: this.type,
@@ -227,6 +255,7 @@ export class GeminiWebAPIProvider extends CopilotProvider<GeminiWebAPIConfig> {
             }
             return fullText;
         } catch (e) {
+            logDebug('❌ Error in text():', e);
             throw this.handleError(e);
         }
     }
@@ -236,7 +265,20 @@ export class GeminiWebAPIProvider extends CopilotProvider<GeminiWebAPIConfig> {
         messages: PromptMessage[],
         options: CopilotChatOptions = {}
     ): AsyncIterable<string> {
+        // DEBUG: Write to log file (Hardcoded path)
+        const fs = await import('fs');
+        const logFile = 'c:\\Users\\admin\\ProjectsIT\\personal\\AFFiNE\\gemini-debug.log';
+
+        const logDebug = (msg: string, data?: any) => {
+            const timestamp = new Date().toISOString();
+            const logLine = `[${timestamp}] ${msg} ${data ? JSON.stringify(data) : ''}\n`;
+            try { fs.appendFileSync(logFile, logLine); } catch (e) { }
+        };
+
+        logDebug('🚀 streamText called', { model: cond, optionsTools: options.tools });
+
         if (!this.instance) {
+            logDebug('❌ Instance not initialized');
             throw new CopilotProviderNotSupported({
                 provider: this.type,
                 kind: 'text',
@@ -245,11 +287,36 @@ export class GeminiWebAPIProvider extends CopilotProvider<GeminiWebAPIConfig> {
 
         const model = this.selectModel(cond);
 
+        // Get tools available for this request
+        const tools = await this.getTools(options, model.id);
+
+        logDebug('🔍 Raw tools from getTools:', Object.keys(tools));
+
+        // Filter out webSearch if present (per user request)
+        if (tools.web_search_exa) {
+            logDebug('Removing web_search_exa');
+            delete tools.web_search_exa;
+        }
+        if (tools.web_crawl_exa) {
+            logDebug('Removing web_crawl_exa');
+            delete tools.web_crawl_exa;
+        }
+
+        const hasTools = Object.keys(tools).length > 0;
+        logDebug('Final tools to pass:', Object.keys(tools));
+
+        if (hasTools) {
+            this.logger.log(`🔧 [GEMINI WEBAPI] Tools enabled: ${Object.keys(tools).join(', ')}`);
+        }
+
         try {
+            logDebug('Calling streamText with tools:', hasTools);
             const { streamText } = await import('ai');
+
             const result = streamText({
                 model: this.instance(model.id),
                 messages: this.convertMessages(messages),
+                tools: hasTools ? tools : undefined, // Pass tools to AI SDK
                 ...(options.maxTokens && { maxTokens: options.maxTokens }),
                 ...(options.temperature !== null &&
                     options.temperature !== undefined && {
@@ -263,6 +330,7 @@ export class GeminiWebAPIProvider extends CopilotProvider<GeminiWebAPIConfig> {
                 yield chunk;
             }
         } catch (e) {
+            logDebug('❌ Error in streamText:', e);
             throw this.handleError(e);
         }
     }

@@ -1,0 +1,107 @@
+version: '3.8'
+
+# ============================================
+# AFFiNE Development Services Stack
+# ============================================
+# This compose file runs ONLY the third-party services required for development.
+# Run the AFFiNE Server locally using `yarn affine server dev`.
+
+name: affine_services
+
+services:
+  # ==========================================
+  # Gemini WebAPI Bridge (Development)
+  # ==========================================
+  gemini-bridge:
+    build:
+      context: ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon
+      dockerfile: Dockerfile
+    image: gemini-bridge-dev
+    container_name: gemini_bridge_dev
+    shm_size: '2gb'
+    ports:
+      - "8765:8765"
+    environment:
+      - BRIDGE_HOST=0.0.0.0
+      - BRIDGE_PORT=8765
+      - COOKIE_REFRESH_INTERVAL=3600
+      - LOG_LEVEL=debug
+    volumes:
+      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon:/app:cached
+      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.gemini_cookies.json:/app/.gemini_cookies.json
+      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.browser_profile:/app/.browser_profile
+    networks:
+      - affine_dev_net
+    restart: unless-stopped
+
+  # ==========================================
+  # PostgreSQL Database (Development)
+  # ==========================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: affine_postgres_dev
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=affine
+      - POSTGRES_PASSWORD=pelvity
+      - POSTGRES_DB=affine
+      - POSTGRES_INITDB_ARGS=--data-checksums
+    volumes:
+      - affine_dev_pgdata:/var/lib/postgresql/data
+    networks:
+      - affine_dev_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U affine -d affine"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Redis Cache (Development)
+  # ==========================================
+  redis:
+    image: redis:latest
+    container_name: affine_redis_dev
+    ports:
+      - "6379:6379"
+    networks:
+      - affine_dev_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Mailpit (Development Email Testing)
+  # ==========================================
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: affine_mailpit_dev
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      - MP_MAX_MESSAGES=5000
+      - MP_DATABASE=/data/mailpit.db
+      - MP_SMTP_AUTH_ACCEPT_ANY=1
+      - MP_SMTP_AUTH_ALLOW_INSECURE=1
+    volumes:
+      - mailpit_data:/data
+    networks:
+      - affine_dev_net
+    restart: unless-stopped
+
+networks:
+  affine_dev_net:
+    driver: bridge
+    name: affine_dev_network
+
+volumes:
+  affine_dev_pgdata:
+    name: affine_dev_pgdata
+  mailpit_data:
+    name: affine_dev_mailpit_data

@@ -21,10 +21,10 @@
   },
   "scripts": {
     "start": "electron .",
-    "dev": "cross-env DEV_SERVER_URL=http://localhost:8080 node ./scripts/dev.ts",
+    "dev": "cross-env DEV_SERVER_URL=http://localhost:8080 node ../../../../tools/cli/bin/runner.js ./scripts/dev.ts",
     "dev:prod": "node ./scripts/dev.ts",
     "build": "cross-env NODE_ENV=production node ./scripts/build-layers.ts",
-    "build:dev": "node ./scripts/build-layers.ts",
+    "build:dev": "node ../../../../tools/cli/bin/runner.js ./scripts/build-layers.ts",
     "generate-assets": "node ./scripts/generate-assets.ts",
     "package": "electron-forge package",
     "make": "electron-forge make",

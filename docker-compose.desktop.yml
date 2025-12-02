@@ -1,0 +1,95 @@
+version: '3'
+name: affine_desktop
+
+services:
+  # AFFiNE Backend for Desktop
+  affine-server:
+    image: affine-desktop-server
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: affine_desktop_server
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=production
+      - AFFINE_ENV=production
+      - AFFINE_SERVER_HOST=0.0.0.0
+      - AFFINE_SERVER_PORT=3010
+      - AFFINE_SERVER_EXTERNAL_URL=http://127.0.0.1:8080
+      - AFFINE_AUTH_ENABLED=false
+      - DATABASE_URL=postgresql://affine:pelvity@postgres:5432/affine
+      - REDIS_SERVER_HOST=redis
+      # AI / Copilot Configuration
+      - AFFINE_COPILOT_ENABLED=true
+      - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_ENABLED=true
+      - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_BASE_URL=http://gemini-bridge:8765
+    volumes:
+      - ./storage:/root/.affine/storage
+      - ./config:/root/.affine/config
+    depends_on:
+      - redis
+      - postgres
+      - gemini-bridge
+    networks:
+      - affine_desktop_net
+
+  # Gemini WebAPI Bridge
+  gemini-bridge:
+    build:
+      context: ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon
+      dockerfile: Dockerfile
+    container_name: affine_desktop_gemini
+    ports:
+      - "8765:8765"
+    environment:
+      - BRIDGE_HOST=0.0.0.0
+      - BRIDGE_PORT=8765
+      - COOKIE_REFRESH_INTERVAL=3600
+    volumes:
+      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.gemini_cookies.json:/app/.gemini_cookies.json
+      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.browser_profile:/app/.browser_profile
+    networks:
+      - affine_desktop_net
+
+  # Cloudflare Tunnel
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: affine_cloudflared
+    command: tunnel --no-autoupdate --loglevel info --url http://affine-server:3010
+    networks:
+      - affine_desktop_net
+    restart: unless-stopped
+    depends_on:
+      - affine-server
+
+  # Database
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: affine_desktop_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=affine
+      - POSTGRES_PASSWORD=pelvity
+      - POSTGRES_DB=affine
+    volumes:
+      - affine_desktop_pgdata:/var/lib/postgresql/data
+    networks:
+      - affine_desktop_net
+
+  # Cache
+  redis:
+    image: redis
+    container_name: affine_desktop_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - affine_desktop_net
+
+volumes:
+  affine_desktop_pgdata:
+
+networks:
+  affine_desktop_net:
+    driver: bridge

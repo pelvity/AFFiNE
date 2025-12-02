@@ -11,10 +11,12 @@ export enum CopilotProviderType {
   FAL = 'fal',
   Gemini = 'gemini',
   GeminiVertex = 'geminiVertex',
+  GeminiWebAPI = 'geminiWebAPI',
   OpenAI = 'openai',
   Perplexity = 'perplexity',
   Morph = 'morph',
 }
+
 
 export const CopilotProviderSchema = z.object({
   type: z.nativeEnum(CopilotProviderType),

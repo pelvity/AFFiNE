@@ -1,7 +1,7 @@
 export const mainHost = '.';
 export const anotherHost = 'another-host';
 
-export const mainWindowOrigin = `file://${mainHost}`;
+export const mainWindowOrigin = process.env.DEV_SERVER_URL || `file://${mainHost}`;
 export const anotherOrigin = `file://${anotherHost}`;
 
 export const onboardingViewUrl = `${mainWindowOrigin}/onboarding`;

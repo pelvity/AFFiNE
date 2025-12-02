@@ -1,6 +1,6 @@
 node_modules
 .git
 .yarn/cache
-packages/*/dist
-packages/*/node_modules
+packages/**/dist
+packages/**/node_modules
 .env

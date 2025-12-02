@@ -16,7 +16,7 @@
     "tests/*"
   ],
   "engines": {
-    "node": "<23.0.0"
+    "node": ">=22 <23"
   },
   "scripts": {
     "affine": "r affine.ts",

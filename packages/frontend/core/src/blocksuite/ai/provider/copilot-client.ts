@@ -87,7 +87,7 @@ export class CopilotClient {
       url: string,
       eventSourceInitDict?: EventSourceInit
     ) => EventSource
-  ) {}
+  ) { }
 
   async createSession(
     options: OptionsField<typeof createCopilotSessionMutation>
@@ -429,6 +429,7 @@ export class CopilotClient {
     toolsConfig?: AIToolsConfig;
     signal?: AbortSignal;
   }) {
+    console.log(`🔵 [FRONTEND] chatText called - sessionId: ${sessionId}, messageId: ${messageId}`);
     let url = `/api/copilot/chat/${sessionId}`;
     const queryString = this.paramsToQueryString({
       messageId,
@@ -440,8 +441,11 @@ export class CopilotClient {
     if (queryString) {
       url += `?${queryString}`;
     }
+    console.log(`🔵 [FRONTEND] Fetching: ${url}`);
     const response = await this.fetcher(url.toString(), { signal });
-    return response.text();
+    const text = await response.text();
+    console.log(`🔵 [FRONTEND] Response received (${text.length} chars): ${text.substring(0, 100)}...`);
+    return text;
   }
 
   // Text or image to text

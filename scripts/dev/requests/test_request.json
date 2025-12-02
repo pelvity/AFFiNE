@@ -2,9 +2,8 @@
     "messages": [
         {
             "role": "user",
-            "content": "Hello, tell me a joke"
+            "content": "Hello! How are you?"
         }
     ],
-    "model": "gemini-2.5-flash",
     "stream": false
 }
