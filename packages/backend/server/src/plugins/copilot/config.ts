@@ -10,6 +10,7 @@ import {
 } from './providers/anthropic';
 import type { FalConfig } from './providers/fal';
 import { GeminiGenerativeConfig, GeminiVertexConfig } from './providers/gemini';
+import { GeminiWebAPIConfig } from './providers/gemini-webapi';
 import { MorphConfig } from './providers/morph';
 import { OpenAIConfig } from './providers/openai';
 import { PerplexityConfig } from './providers/perplexity';
@@ -31,6 +32,7 @@ declare global {
         fal: ConfigItem<FalConfig>;
         gemini: ConfigItem<GeminiGenerativeConfig>;
         geminiVertex: ConfigItem<GeminiVertexConfig>;
+        geminiWebAPI: ConfigItem<GeminiWebAPIConfig>;
         perplexity: ConfigItem<PerplexityConfig>;
         anthropic: ConfigItem<AnthropicOfficialConfig>;
         anthropicVertex: ConfigItem<AnthropicVertexConfig>;
@@ -88,6 +90,15 @@ defineModuleConfig('copilot', {
     desc: 'The config for the gemini provider in Google Vertex AI.',
     default: {},
     schema: VertexSchema,
+  },
+  'providers.geminiWebAPI': {
+    desc: 'The config for the Gemini WebAPI provider (uses Python bridge service).',
+    default: {
+      baseURL: 'http://127.0.0.1:8765',
+      apiKey: '',
+      enabled: false,
+    },
+    link: 'https://github.com/HanaokaYuzu/Gemini-API',
   },
   'providers.perplexity': {
     desc: 'The config for the perplexity provider.',

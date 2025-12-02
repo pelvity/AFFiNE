@@ -304,12 +304,12 @@ export class WebContentViewsManager {
       ...patch,
       views: patch.views
         ? patch.views.map(v => {
-            const existing = workbench.views.find(e => e.id === v.id);
-            return {
-              ...existing,
-              ...v,
-            };
-          })
+          const existing = workbench.views.find(e => e.id === v.id);
+          return {
+            ...existing,
+            ...v,
+          };
+        })
         : workbench.views,
     });
     this.patchTabViewsMeta({
@@ -428,8 +428,8 @@ export class WebContentViewsManager {
       title: 'New Tab',
       path: option.basename?.startsWith('/workspace')
         ? {
-            pathname: '/all',
-          }
+          pathname: '/all',
+        }
         : undefined,
     };
     option.pinned ??= false;
@@ -820,6 +820,7 @@ export class WebContentViewsManager {
         // serialize exposed meta that to be used in preload
         additionalArguments: additionalArguments,
         backgroundThrottling: false,
+        webSecurity: false,
       },
     });
 
@@ -872,7 +873,7 @@ export class WebContentViewsManager {
     });
 
     this.webViewsMap$.next(this.tabViewsMap.set(viewId, view));
-    let unsub = () => {};
+    let unsub = () => { };
 
     // shell process do not need to connect to helper process
     if (type !== 'shell') {

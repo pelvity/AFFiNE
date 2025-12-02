@@ -83,7 +83,7 @@ export class CopilotController implements BeforeApplicationShutdown {
     private readonly provider: CopilotProviderFactory,
     private readonly workflow: CopilotWorkflowService,
     private readonly storage: CopilotStorage
-  ) {}
+  ) { }
 
   async beforeApplicationShutdown() {
     await lastValueFrom(
@@ -212,20 +212,20 @@ export class CopilotController implements BeforeApplicationShutdown {
     const context = await this.context.getBySessionId(sessionId);
     const contextParams =
       (Array.isArray(context?.files) && context.files.length > 0) ||
-      (Array.isArray(context?.blobs) && context.blobs.length > 0)
+        (Array.isArray(context?.blobs) && context.blobs.length > 0)
         ? {
-            contextFiles: [
-              ...context.files,
-              ...(await context.getBlobMetadata()),
-            ],
-          }
+          contextFiles: [
+            ...context.files,
+            ...(await context.getBlobMetadata()),
+          ],
+        }
         : {};
     const lastParams = latestMessage
       ? {
-          ...latestMessage.params,
-          content: latestMessage.content,
-          attachments: latestMessage.attachments,
-        }
+        ...latestMessage.params,
+        content: latestMessage.content,
+        attachments: latestMessage.attachments,
+      }
       : {};
 
     const finalMessage = session.finish({
@@ -250,6 +250,7 @@ export class CopilotController implements BeforeApplicationShutdown {
     @Param('sessionId') sessionId: string,
     @Query() query: Record<string, string | string[]>
   ): Promise<string> {
+    this.logger.log(`🔍 [COPILOT CHAT] Session: ${sessionId}, User: ${user.id}, Query:`, JSON.stringify(query));
     const info: any = { sessionId, params: query };
 
     try {
@@ -267,6 +268,7 @@ export class CopilotController implements BeforeApplicationShutdown {
 
       const { reasoning, webSearch, toolsConfig } =
         ChatQuerySchema.parse(query);
+      this.logger.log(`🚀 [COPILOT] Calling provider.text() with model: ${model}`);
       const content = await provider.text({ modelId: model }, finalMessage, {
         ...session.config.promptConfig,
         signal: getSignal(req).signal,
@@ -277,6 +279,7 @@ export class CopilotController implements BeforeApplicationShutdown {
         webSearch,
         tools: getTools(session.config.promptConfig?.tools, toolsConfig),
       });
+      this.logger.log(`✅ [COPILOT] Received response (${content.length} chars): ${content.substring(0, 100)}...`);
 
       session.push({
         role: 'assistant',
@@ -284,6 +287,7 @@ export class CopilotController implements BeforeApplicationShutdown {
         createdAt: new Date(),
       });
       await session.save();
+      this.logger.log(`💾 [COPILOT] Session saved, returning response`);
 
       return content;
     } catch (e: any) {
@@ -305,6 +309,7 @@ export class CopilotController implements BeforeApplicationShutdown {
     @Param('sessionId') sessionId: string,
     @Query() query: Record<string, string>
   ): Promise<Observable<ChatEvent>> {
+    this.logger.log(`🌊 [COPILOT STREAM] Session: ${sessionId}, User: ${user.id}, Query:`, JSON.stringify(query));
     const info: any = { sessionId, params: query, throwInStream: false };
 
     try {
@@ -399,6 +404,7 @@ export class CopilotController implements BeforeApplicationShutdown {
     @Param('sessionId') sessionId: string,
     @Query() query: Record<string, string>
   ): Promise<Observable<ChatEvent>> {
+    this.logger.log(`🌊 [COPILOT OBJECT STREAM] Session: ${sessionId}, User: ${user.id}, Query:`, JSON.stringify(query));
     const info: any = { sessionId, params: query, throwInStream: false };
 
     try {

@@ -15,13 +15,13 @@ type IntegrationCard = {
   icon: ReactNode;
   cloud?: boolean;
 } & (
-  | {
+    | {
       setting: ReactNode;
     }
-  | {
+    | {
       link: string;
     }
-);
+  );
 
 const INTEGRATION_LIST = [
   {
@@ -31,7 +31,7 @@ const INTEGRATION_LIST = [
     icon: <IntegrationTypeIcon type="readwise" />,
     setting: <ReadwiseSettingPanel />,
   },
-  BUILD_CONFIG.isElectron && {
+  {
     id: 'calendar' as const,
     name: 'com.affine.integration.calendar.name',
     desc: 'com.affine.integration.calendar.desc',

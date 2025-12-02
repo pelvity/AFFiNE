@@ -99,6 +99,7 @@ export class MainWindowManager {
         webgl: true,
         contextIsolation: true,
         sandbox: false,
+        webSecurity: false,
       },
     });
     const helper = await ensureHelperProcess();
