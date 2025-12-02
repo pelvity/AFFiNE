@@ -25,7 +25,14 @@ RUN ls -l packages/backend/native/server-native.node
 RUN yarn workspace @affine/reader build
 
 # Copy frontend assets from official image
-COPY --from=ghcr.io/toeverything/affine-graphql:stable /app/static /app/packages/backend/server/static
+# Build frontend from source to include local changes (Calendar integration)
+# Increase memory for build
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+# Build frontend using yarn workspace command
+RUN yarn workspace @affine/web build
+# Debug: List contents of web app directory to verify dist exists
+RUN ls -la packages/frontend/apps/web
+RUN cp -r packages/frontend/apps/web/dist /app/packages/backend/server/static
 
 # Fix native module name mismatch
 RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.x64.node || true

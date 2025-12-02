@@ -156,7 +156,7 @@
     "why-is-node-running": "^3.2.2"
   },
   "nodemonConfig": {
-    "exec": "node",
+    "exec": "node ../../../tools/cli/bin/runner.js",
     "ignore": [
       "**/__tests__/**",
       "**/dist/**",

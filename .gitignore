@@ -55,7 +55,17 @@ Thumbs.db
 # env
 *.env.local
 *.local.env
+.env.dev.local
+.env.prod.local
+.env.local
+.env
 .history
+
+# Docker
+docker-compose.override.yml
+.docker/dev/.env
+.docker/dev/compose.yml
+.docker/selfhost/.env
 
 .next
 .vercel
@@ -91,3 +101,15 @@ af.cmd
 
 # playwright
 storageState.json
+
+# Logs and temp artifacts
+*.log
+*.log.*
+*logs*.txt
+server_log*.txt
+debug_logs*.txt
+full_logs.txt
+recent_logs.txt
+temp_*.*
+temp/
+temp_openai/

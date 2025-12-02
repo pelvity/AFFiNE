@@ -53,8 +53,6 @@ services:
       - BRIDGE_HOST=0.0.0.0
       - BRIDGE_PORT=8765
       - COOKIE_REFRESH_INTERVAL=3600
-      - GEMINI_COOKIE_1PSID=g.a0003wjbp87QrpI0GDp_9zGz-0vOj79f2sw3iA1TJ3N8FVbnfHP0t_D2G6DuTor3csNZBJt41wACgYKAd0SARESFQHGX2Mi5FKLftEvqEhJOi9IxBYwFBoVAUF8yKrEvJKpl7cGTJKB88lqmETn0076
-      - GEMINI_COOKIE_1PSIDTS=sidts-CjcBwQ9iI3ieHH1jiomUuZlhJl_LW4KRTC5r0v_QJ847KFqNz3eY_YzHKLr-YaeKu4AKcJFHyJXNEAA
     volumes:
       - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.gemini_cookies.json:/app/.gemini_cookies.json
       - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.browser_profile:/app/.browser_profile

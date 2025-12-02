@@ -123,6 +123,7 @@ export function textToText({
   modelId,
   toolsConfig,
 }: TextToTextOptions) {
+  console.log(`🟢 [FRONTEND] textToText called - sessionId: ${sessionId}, stream: ${stream}, content: ${content?.substring(0, 50)}`);
   let messageId: string | undefined;
 
   if (stream) {
@@ -186,8 +187,8 @@ export function textToText({
     return Promise.race([
       timeout
         ? delay(timeout).then(() => {
-            throw new Error('Timeout');
-          })
+          throw new Error('Timeout');
+        })
         : null,
       (async function () {
         if (!retry) {
