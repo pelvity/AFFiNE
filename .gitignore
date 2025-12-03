@@ -129,3 +129,8 @@ launch-*.bat
 docker-compose.working-version.yml
 docker-compose.*.resolved.yml
 redundant_files.txt
+
+# Large archives (use releases instead)
+*.tar.gz
+*.zip
+!packages/**/*.zip
