@@ -1,0 +1,120 @@
+# ============================================
+# AFFiNE Docker Compose - Base Configuration
+# ============================================
+# This file contains the common configuration shared between dev and prod.
+# Use with docker-compose.override.yml (dev) or docker-compose.prod.yml (prod)
+#
+# Usage:
+#   Development: docker-compose up -d
+#   Production:  docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  # ==========================================
+  # AFFiNE Backend
+  # ==========================================
+  affine:
+    image: affine-server:${ENV:-dev}
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: affine_server_${ENV:-dev}
+    ports:
+      - '${AFFINE_PORT:-3010}:3010'
+    environment:
+      # Core settings
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=3010
+      - HOST=0.0.0.0
+
+      # Database
+      - REDIS_SERVER_HOST=redis
+      - DATABASE_URL=postgresql://${DB_USERNAME}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE}
+
+      # Server config
+      - AFFINE_SERVER_HTTPS=false
+      - AFFINE_SERVER_EXTERNAL_URL=${AFFINE_SERVER_EXTERNAL_URL:-http://localhost:3010}
+
+      # AI/Copilot
+      - AFFINE_COPILOT_ENABLED=${AFFINE_COPILOT_ENABLED:-true}
+      - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_BASE_URL=${GEMINI_BRIDGE_URL:-http://gemini-bridge:8765}
+      - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_ENABLED=${GEMINI_ENABLED:-true}
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - affine_network
+
+    restart: unless-stopped
+
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: pgvector/pgvector:pg${DB_VERSION:-16}
+    container_name: affine_postgres_${ENV:-dev}
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE}
+      - POSTGRES_INITDB_ARGS=--data-checksums
+
+    networks:
+      - affine_network
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Redis Cache
+  # ==========================================
+  redis:
+    image: redis:latest
+    container_name: affine_redis_${ENV:-dev}
+
+    networks:
+      - affine_network
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Gemini WebAPI Bridge
+  # ==========================================
+  gemini-bridge:
+    build:
+      context: ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon
+      dockerfile: Dockerfile
+    image: gemini-bridge:${ENV:-dev}
+    container_name: gemini_bridge_${ENV:-dev}
+    shm_size: '2gb'
+    environment:
+      - BRIDGE_HOST=0.0.0.0
+      - BRIDGE_PORT=8765
+      - COOKIE_REFRESH_INTERVAL=3600
+
+    networks:
+      - affine_network
+
+    restart: unless-stopped
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  affine_network:
+    driver: bridge
+    name: affine_${ENV:-dev}_network

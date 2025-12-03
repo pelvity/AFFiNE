@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  affine:
+    ports:
+      - '3010:3010'
+    volumes:
+      - /home/ec2-user/.affine/dev/config:/root/.affine/config
+      - /home/ec2-user/.affine/dev/storage:/root/.affine/storage
+      - ./affine-config.json:/root/.affine/config/config.json
+
+  postgres:
+    volumes:
+      - /home/ec2-user/.affine/dev/postgres/pgdata:/var/lib/postgresql/data
+
+  mailpit:
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+
+  redis:
+    ports:
+      - '6379:6379'
+
+  manticoresearch:
+    volumes:
+      - /home/ec2-user/.affine/dev/manticore:/var/lib/manticore
+
+networks:
+  affine_dev_net:
+    driver: bridge
+    name: affine_dev_network
+
+volumes:
+  mailpit_data:
+    name: affine_dev_mailpit_data
+  manticore_data:
+    name: affine_dev_manticore_data

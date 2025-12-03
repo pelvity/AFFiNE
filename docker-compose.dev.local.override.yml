@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  affine:
+    container_name: affine_backend_dev
+    ports:
+      - '3011:3010'
+    environment:
+      - AFFINE_SERVER_EXTERNAL_URL=http://localhost:3011
