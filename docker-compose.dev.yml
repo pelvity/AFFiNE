@@ -20,14 +20,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-      target: development
+      # target: development  <-- Removed as Dockerfile.dev has no stages
     container_name: affine_server_dev
     ports:
-      - "${PORT:-3010}:3010"
-      - "9229:9229"  # Node.js debugger port
+      - '${PORT:-3010}:3010'
+      - '9229:9229' # Node.js debugger port
     env_file:
       - .env.dev
-      - .env.dev.local  # Optional local overrides (gitignored)
+      - .env.dev.local # Optional local overrides (gitignored)
     environment:
       - NODE_ENV=development
       - AFFINE_ENV=dev
@@ -44,7 +44,8 @@ services:
       - AFFINE_AUTH_ENABLED=false
       # Copilot/AI features
       - AFFINE_COPILOT_ENABLED=true
-      - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_BASE_URL=http://gemini-bridge:8765
+      # Point to local bridge via host.docker.internal
+      - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_BASE_URL=http://host.docker.internal:8765
       - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_ENABLED=true
       # Debugging
       - DEBUG=affine:*
@@ -52,9 +53,9 @@ services:
       - FORCE_COLOR=true
       - DEBUG_COLORS=true
     volumes:
-      # Mount source code for hot reload
-      - ./packages:/app/packages:cached
-      - ./blocksuite:/app/blocksuite:cached
+      # Mount source code for hot reload (DISABLED to use built image artifacts)
+      # - ./packages:/app/packages:cached
+      # - ./blocksuite:/app/blocksuite:cached
       # Persistent data
       - ${CONFIG_LOCATION:-C:\\Users\\admin\\.affine\\dev\\config}:/root/.affine/config
       - ${UPLOAD_LOCATION:-C:\\Users\\admin\\.affine\\dev\\storage}:/root/.affine/storage
@@ -64,44 +65,70 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      gemini-bridge:
-        condition: service_started
+      # gemini-bridge:
+      #   condition: service_started
     networks:
       - affine_dev_net
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3010/api/healthz', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3010/api/healthz', (r) => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
   # ==========================================
-  # Gemini WebAPI Bridge (Development)
+  # Database Migration Job
   # ==========================================
-  gemini-bridge:
-    build:
-      context: ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon
-      dockerfile: Dockerfile
-    image: gemini-bridge-dev
-    container_name: gemini_bridge_dev
-    shm_size: '2gb'
-    ports:
-      - "8765:8765"
+  affine_migration:
+    image: affine-server-dev
+    container_name: affine_migration_dev
+    env_file:
+      - .env.dev
     environment:
-      - BRIDGE_HOST=0.0.0.0
-      - BRIDGE_PORT=8765
-      - COOKIE_REFRESH_INTERVAL=3600
-      - LOG_LEVEL=debug
-    volumes:
-      # Mount source for development
-      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon:/app:cached
-      # Persistent browser data
-      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.gemini_cookies.json:/app/.gemini_cookies.json
-      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.browser_profile:/app/.browser_profile
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${DB_USERNAME:-affine_dev}:${DB_PASSWORD:-dev_password_change_me}@postgres:5432/${DB_DATABASE:-affine_dev}
+    command: ['sh', '-c', 'yarn workspace @affine/server prisma migrate deploy']
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - affine_dev_net
-    restart: unless-stopped
+
+  # ==========================================
+  # Gemini WebAPI Bridge (Development)
+  # ==========================================
+  # gemini-bridge:
+  #   build:
+  #     context: ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon
+  #     dockerfile: Dockerfile
+  #   image: gemini-bridge-dev
+  #   container_name: gemini_bridge_dev
+  #   shm_size: '2gb'
+  #   ports:
+  #     - "8765:8765"
+  #   environment:
+  #     - BRIDGE_HOST=0.0.0.0
+  #     - BRIDGE_PORT=8765
+  #     - COOKIE_REFRESH_INTERVAL=3600
+  #     - LOG_LEVEL=debug
+  #   volumes:
+  #     # Mount source for development
+  #     - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon:/app:cached
+  #     # Persistent browser data
+  #     - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.gemini_cookies.json:/app/.gemini_cookies.json
+  #     - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.browser_profile:/app/.browser_profile
+  #   networks:
+  #     - affine_dev_net
+  #   restart: unless-stopped
 
   # ==========================================
   # PostgreSQL Database (Development)
@@ -110,7 +137,7 @@ services:
     image: pgvector/pgvector:pg${DB_VERSION:-16}
     container_name: affine_postgres_dev
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       - POSTGRES_USER=${DB_USERNAME:-affine_dev}
       - POSTGRES_PASSWORD=${DB_PASSWORD:-dev_password_change_me}
@@ -122,7 +149,11 @@ services:
       - affine_dev_net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-affine_dev} -d ${DB_DATABASE:-affine_dev}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DB_USERNAME:-affine_dev} -d ${DB_DATABASE:-affine_dev}',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -134,12 +165,12 @@ services:
     image: redis:latest
     container_name: affine_redis_dev
     ports:
-      - "6379:6379"
+      - '6379:6379'
     networks:
       - affine_dev_net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -151,8 +182,8 @@ services:
     image: axllent/mailpit:latest
     container_name: affine_mailpit_dev
     ports:
-      - "1025:1025"  # SMTP
-      - "8025:8025"  # Web UI
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
     environment:
       - MP_MAX_MESSAGES=5000
       - MP_DATABASE=/data/mailpit.db
@@ -164,7 +195,7 @@ services:
       - affine_dev_net
     restart: unless-stopped
     profiles:
-      - full  # Only start with --profile full
+      - full # Only start with --profile full
 
   # ==========================================
   # ManticoreSearch (Development)
@@ -173,7 +204,7 @@ services:
     image: manticoresearch/manticore:${MANTICORE_VERSION:-10.1.0}
     container_name: affine_manticore_dev
     ports:
-      - "9308:9308"
+      - '9308:9308'
     ulimits:
       nproc: 65535
       nofile:
@@ -188,7 +219,7 @@ services:
       - affine_dev_net
     restart: unless-stopped
     profiles:
-      - search  # Only start with --profile search
+      - search # Only start with --profile search
 
 # ==========================================
 # Networks
