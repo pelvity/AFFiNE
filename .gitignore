@@ -113,3 +113,19 @@ recent_logs.txt
 temp_*.*
 temp/
 temp_openai/
+
+# Test and development scripts (not for production)
+create-student-*.js
+create-user-*.js
+fix_db*.sql
+file_list.txt
+test_*.ps1
+test_*.py
+test_*.json
+**/requests/test_*.json
+start-*.ps1
+start-*.bat
+launch-*.bat
+docker-compose.working-version.yml
+docker-compose.*.resolved.yml
+redundant_files.txt
