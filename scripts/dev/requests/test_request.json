@@ -1,9 +1,0 @@
-{
-    "messages": [
-        {
-            "role": "user",
-            "content": "Hello! How are you?"
-        }
-    ],
-    "stream": false
-}
