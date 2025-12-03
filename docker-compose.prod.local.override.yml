@@ -1,0 +1,12 @@
+version: '3.8'
+
+# Production local override - Windows-specific paths and settings
+# This file is loaded when running: docker-compose -f docker-compose.prod.yml -f docker-compose.prod.local.override.yml up
+
+services:
+  affine:
+    container_name: affine_backend_prod
+    ports:
+      - '3010:3010'
+    environment:
+      - AFFINE_SERVER_EXTERNAL_URL=http://localhost:3010

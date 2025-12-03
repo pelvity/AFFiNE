@@ -18,23 +18,20 @@ services:
   # AFFiNE Backend (Production Build)
   # ==========================================
   affine:
-    image: affine-server-prod:latest
+    image: pelvity/affine-backend:prod
     build:
       context: .
-      dockerfile: Dockerfile.dev  # TODO: Create Dockerfile.prod with multi-stage
-    container_name: affine_server_prod
+      dockerfile: Dockerfile.dev # TODO: Create Dockerfile.prod with multi-stage
+    container_name: affine_backend_prod
     ports:
-      - "3010:3000"
+      - '3010:3010'
     env_file:
-      - .env.prod.local  # Production configuration (gitignored)
+      - .env.prod.local # Production configuration (gitignored)
     environment:
       - NODE_ENV=production
       - AFFINE_ENV=production
       - AFFINE_INDEXER_ENABLED=false
       - REDIS_SERVER_HOST=redis
-      - DB_USERNAME=affine
-      - DB_PASSWORD=SecureProductionPassword123
-      - DB_DATABASE=affine
       - DATABASE_URL=postgresql://affine:SecureProductionPassword123@postgres:5432/affine
       - PORT=3010
       - HOST=0.0.0.0
@@ -70,30 +67,36 @@ services:
           cpus: '1'
           memory: 2G
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3010/api/healthz', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3010/api/healthz', (r) => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   # ==========================================
   # Database Migration Job (Production)
   # ==========================================
   affine_migration:
-    image: affine-server-prod:latest
+    image: pelvity/affine-backend:prod
     container_name: affine_migration_prod
     env_file:
       - .env.prod.local
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql://affine:SecureProductionPassword123@postgres:5432/affine
       - REDIS_SERVER_HOST=redis
-    command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
+    command: ['sh', '-c', 'yarn workspace @affine/server prisma migrate deploy']
     volumes:
       - ${CONFIG_LOCATION:-/root/.affine/config}:/root/.affine/config
       - ${UPLOAD_LOCATION:-/root/.affine/storage}:/root/.affine/storage
@@ -105,10 +108,10 @@ services:
     networks:
       - affine_prod_net
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "5m"
-        max-file: "2"
+        max-size: '5m'
+        max-file: '2'
 
   # ==========================================
   # Gemini WebAPI Bridge (Production)
@@ -118,19 +121,19 @@ services:
       context: ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon
       dockerfile: Dockerfile
     image: gemini-bridge-prod:latest
-    container_name: gemini_bridge_prod
+    container_name: affine_gemini_prod
     shm_size: '2gb'
     # Don't expose port externally in production
     expose:
-      - "8765"
+      - '8765'
     environment:
       - BRIDGE_HOST=0.0.0.0
       - BRIDGE_PORT=8765
       - COOKIE_REFRESH_INTERVAL=3600
       - LOG_LEVEL=${LOG_LEVEL:-info}
     volumes:
-      # Only persistent data, no source mounts
-      - gemini_cookies:/app/.gemini_cookies.json
+      # Bind mount the actual cookie file from the addon project
+      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.gemini_cookies.json:/app/.gemini_cookies.json
       - gemini_browser:/app/.browser_profile
     networks:
       - affine_prod_net
@@ -144,10 +147,10 @@ services:
           cpus: '0.5'
           memory: 1G
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   # ==========================================
   # PostgreSQL Database (Production)
@@ -157,16 +160,18 @@ services:
     container_name: affine_postgres_prod
     # Don't expose port externally in production
     expose:
-      - "5432"
+      - '5432'
     env_file:
       - .env.prod.local
     environment:
-      - POSTGRES_USER=affine
-      - POSTGRES_PASSWORD=SecureProductionPassword123
+      - POSTGRES_USER=postgres # Default superuser for initialization
+      - POSTGRES_PASSWORD=postgres # Default password for initialization (not used after first run)
       - POSTGRES_DB=affine
       - POSTGRES_INITDB_ARGS=--data-checksums
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - ${DB_DATA_LOCATION:-/var/lib/postgresql/data}:/var/lib/postgresql/data
+      - ./docker/postgres/initdb.d:/docker-entrypoint-initdb.d
     networks:
       - affine_prod_net
     restart: unless-stopped
@@ -179,15 +184,19 @@ services:
           cpus: '1'
           memory: 2G
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-affine} -d ${DB_DATABASE:-affine}"]
+      test:
+        [
+          'CMD-SHELL',
+          'PGPASSWORD=SecureProductionPassword123 pg_isready -U affine -d affine -h localhost',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   # ==========================================
   # Redis Cache (Production)
@@ -197,7 +206,7 @@ services:
     container_name: affine_redis_prod
     # Don't expose port externally in production
     expose:
-      - "6379"
+      - '6379'
     # Uncomment for Redis persistence
     # command: redis-server --appendonly yes
     # volumes:
@@ -214,15 +223,15 @@ services:
           cpus: '0.5'
           memory: 512M
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "5m"
-        max-file: "2"
+        max-size: '5m'
+        max-file: '2'
 
   # ==========================================
   # Nginx Reverse Proxy (Production - Optional)
@@ -231,8 +240,8 @@ services:
     image: nginx:alpine
     container_name: affine_nginx_prod
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./.docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./.docker/nginx/conf.d:/etc/nginx/conf.d:ro
@@ -243,12 +252,12 @@ services:
       - affine_prod_net
     restart: unless-stopped
     profiles:
-      - nginx  # Only start with --profile nginx
+      - nginx # Only start with --profile nginx
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
 # ==========================================
 # Networks
@@ -258,14 +267,12 @@ networks:
     driver: bridge
     name: affine_prod_network
     # Production network with isolation
-    internal: false  # Set to true if using nginx as only external access
+    internal: false # Set to true if using nginx as only external access
 
 # ==========================================
 # Volumes
 # ==========================================
 volumes:
-  gemini_cookies:
-    name: affine_prod_gemini_cookies
   gemini_browser:
     name: affine_prod_gemini_browser
   # Uncomment for Redis persistence
