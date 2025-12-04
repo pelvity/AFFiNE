@@ -32,7 +32,7 @@ import {
 import { Models, TokenType } from '../../models';
 import { validators } from '../utils/validators';
 import { Public } from './guard';
-import { AuthService } from './service';
+import { AuthService, sessionUser } from './service';
 import { CurrentUser, Session } from './session';
 
 interface PreflightResponse {
@@ -148,26 +148,69 @@ export class AuthController {
     email: string,
     password: string
   ) {
-    const user = await this.auth.signIn(email, password);
+    // Check if user exists
+    const existingUser = await this.models.user.getUserByEmail(email, {
+      withDisabled: true,
+    });
+
+    let user: CurrentUser;
+
+    if (existingUser) {
+      // Existing user - verify password and sign in
+      if (existingUser.disabled) {
+        throw new WrongSignInCredentials({ email });
+      }
+      user = await this.auth.signIn(email, password);
+    } else {
+      // New user - create account with password (no email verification needed)
+      if (!this.config.auth.allowSignup) {
+        throw new SignUpForbidden();
+      }
+
+      const newUser = await this.models.user.create({
+        email,
+        password,
+        registered: true,
+        emailVerifiedAt: new Date(), // Mark as verified immediately
+      });
+      user = sessionUser(newUser);
+    }
 
     await this.auth.setCookies(req, res, user.id);
     res.status(HttpStatus.OK).send(user);
   }
 
   async sendMagicLink(
-    _req: Request,
+    req: Request,
     res: Response,
     email: string,
     callbackUrl = '/magic-link',
     redirectUrl?: string,
     clientNonce?: string
   ) {
-    // send email magic link
+    // Check if user exists to validate status/signup permissions
     const user = await this.models.user.getUserByEmail(email, {
       withDisabled: true,
     });
 
-    if (!user) {
+    if (user) {
+      if (user.disabled) {
+        throw new WrongSignInCredentials({ email });
+      }
+
+      // Existing user with password can use magic link for login
+      // Auto-login them without email verification
+      if (user.password) {
+        const currentUser = sessionUser(user);
+        await this.auth.setCookies(req, res, currentUser.id);
+        res.status(HttpStatus.OK).send(currentUser);
+        return;
+      }
+
+      // Existing user without password - require them to set one
+      throw new WrongSignInCredentials({ email });
+    } else {
+      // New user checks
       if (!this.config.auth.allowSignup) {
         throw new SignUpForbidden();
       }
@@ -195,45 +238,10 @@ export class AuthController {
           throw new InvalidEmail({ email });
         }
       }
-    } else if (user.disabled) {
+
+      // New users MUST provide a password - reject passwordless signup
       throw new WrongSignInCredentials({ email });
     }
-
-    const ttlInSec = 30 * 60;
-    const token = await this.models.verificationToken.create(
-      TokenType.SignIn,
-      email,
-      ttlInSec
-    );
-
-    const otp = this.crypto.otp();
-    // TODO(@forehalo): this is a temporary solution, we should not rely on cache to store the otp
-    const cacheKey = OTP_CACHE_KEY(otp);
-    await this.cache.set(
-      cacheKey,
-      { token, clientNonce },
-      { ttl: ttlInSec * 1000 }
-    );
-
-    const magicLink = this.url.link(callbackUrl, {
-      token: otp,
-      email,
-      ...(redirectUrl
-        ? {
-            redirect_uri: redirectUrl,
-          }
-        : {}),
-    });
-    if (env.dev) {
-      // make it easier to test in dev mode
-      this.logger.debug(`Magic link: ${magicLink}`);
-    }
-
-    await this.auth.sendSignInEmail(email, magicLink, otp, !user);
-
-    res.status(HttpStatus.OK).send({
-      email: email,
-    });
   }
 
   @Public()

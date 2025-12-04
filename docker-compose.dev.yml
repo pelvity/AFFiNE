@@ -43,10 +43,10 @@ services:
       - AFFINE_SERVER_EXTERNAL_URL=http://localhost:${PORT:-3010}
       - AFFINE_AUTH_ENABLED=false
       # Copilot/AI features
-      - AFFINE_COPILOT_ENABLED=true
+      - AFFINE_COPILOT_ENABLED=false
       # Point to local bridge via host.docker.internal
       - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_BASE_URL=http://host.docker.internal:8765
-      - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_ENABLED=true
+      - AFFINE_COPILOT_PROVIDERS_GEMINIWEBAPI_ENABLED=false
       # Debugging
       - DEBUG=affine:*
       - LOG_LEVEL=debug
