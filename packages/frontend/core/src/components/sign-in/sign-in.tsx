@@ -92,21 +92,15 @@ export const SignInStep = ({
     try {
       const { hasPassword } = await authService.checkUserByEmail(email);
 
-      if (hasPassword) {
-        changeState(prev => ({
-          ...prev,
-          email,
-          step: 'signInWithPassword',
-          hasPassword: true,
-        }));
-      } else {
-        changeState(prev => ({
-          ...prev,
-          email,
-          step: 'signInWithEmail',
-          hasPassword: false,
-        }));
-      }
+      // Always redirect to password step
+      // - If user has password: they'll enter it to login
+      // - If user doesn't have password: they'll create one to signup
+      changeState(prev => ({
+        ...prev,
+        email,
+        step: 'signInWithPassword',
+        hasPassword,
+      }));
     } catch (err: any) {
       console.error(err);
 
@@ -184,7 +178,7 @@ export const SignInStep = ({
               <Trans i18nKey="com.affine.auth.sign.message">
                 By clicking &quot;Continue with Google/Email&quot; above, you acknowledge that
                 you agree to AFFiNE&apos;s <a href="https://affine.pro/terms" target="_blank" rel="noreferrer">Terms of Conditions</a> and <a href="https://affine.pro/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.
-            </Trans>
+              </Trans>
             </div>
             <div className={style.skipDivider}>
               <div className={style.skipDividerLine} />

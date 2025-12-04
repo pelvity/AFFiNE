@@ -110,7 +110,9 @@ export const SignInWithPasswordStep = ({
   return (
     <AuthContainer>
       <AuthHeader
-        title={t['com.affine.auth.sign.in']()}
+        title={
+          state.hasPassword ? t['com.affine.auth.sign.in']() : 'Create Account'
+        }
         subTitle={serverName}
       />
 
@@ -123,7 +125,16 @@ export const SignInWithPasswordStep = ({
         <AuthInput
           autoFocus
           data-testid="password-input"
-          label={t['com.affine.auth.password']()}
+          label={
+            state.hasPassword
+              ? t['com.affine.auth.password']()
+              : 'Create Password'
+          }
+          placeholder={
+            state.hasPassword
+              ? 'Enter your password'
+              : 'Choose a secure password'
+          }
           value={password}
           type="password"
           onChange={useCallback((value: string) => {
@@ -133,17 +144,6 @@ export const SignInWithPasswordStep = ({
           errorHint={t['com.affine.auth.password.error']()}
           onEnter={onSignIn}
         />
-        {!isSelfhosted && (
-          <div className={styles.passwordButtonRow}>
-            <a
-              data-testid="send-magic-link-button"
-              className={styles.linkButton}
-              onClick={sendMagicLink}
-            >
-              {t['com.affine.auth.sign.auth.code.send-email.sign-in']()}
-            </a>
-          </div>
-        )}
         {!verifyToken && needCaptcha && <Captcha />}
         <Button
           data-testid="sign-in-button"
@@ -153,7 +153,9 @@ export const SignInWithPasswordStep = ({
           disabled={isLoading || (!verifyToken && needCaptcha)}
           onClick={onSignIn}
         >
-          {t['com.affine.auth.sign.in']()}
+          {state.hasPassword
+            ? t['com.affine.auth.sign.in']()
+            : 'Create Account'}
         </Button>
       </AuthContent>
       <AuthFooter>
