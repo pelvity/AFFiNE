@@ -73,7 +73,7 @@ export class AuthService extends Service {
       if (scheme) {
         magicLinkUrlParams.set('client', scheme);
       }
-      await this.fetchService.fetch('/api/auth/sign-in', {
+      const response = await this.fetchService.fetch('/api/auth/sign-in', {
         method: 'POST',
         body: JSON.stringify({
           email,
@@ -87,6 +87,16 @@ export class AuthService extends Service {
           ...(verifyToken ? this.captchaHeaders(verifyToken, challenge) : {}),
         },
       });
+
+      // Check if the response contains a user object (immediate login)
+      // instead of just a success message (email sent)
+      const data = await response.json();
+      if (data && data.id && data.email) {
+        // User was logged in immediately (email verification disabled)
+        this.session.revalidate();
+        track.$.$.auth.signedIn({ method: 'magic-link' });
+      }
+      // Otherwise, email was sent and user needs to enter code
     } catch (e) {
       track.$.$.auth.signInFail({
         method: 'magic-link',
