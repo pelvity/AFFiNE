@@ -85,7 +85,9 @@ export class CalendarIntegration extends Entity {
   async verifyUrl(_url: string) {
     const url = parseCalendarUrl(_url);
     try {
-      const response = await fetch(url);
+      // Use backend proxy to bypass CORS restrictions
+      const proxyUrl = `/api/calendar/proxy?url=${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl);
       const content = await response.text();
       ICAL.parse(content);
       return content;
