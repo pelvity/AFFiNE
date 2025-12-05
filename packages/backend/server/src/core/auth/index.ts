@@ -6,6 +6,7 @@ import { FeatureModule } from '../features';
 import { MailModule } from '../mail';
 import { QuotaModule } from '../quota';
 import { UserModule } from '../user';
+import { CalendarProxyController } from './calendar-proxy.controller';
 import { AuthController } from './controller';
 import { AuthGuard, AuthWebsocketOptionsProvider } from './guard';
 import { AuthCronJob } from './job';
@@ -22,7 +23,7 @@ import { AuthService } from './service';
     AuthWebsocketOptionsProvider,
   ],
   exports: [AuthService, AuthGuard, AuthWebsocketOptionsProvider],
-  controllers: [AuthController],
+  controllers: [AuthController, CalendarProxyController],
 })
 export class AuthModule {}
 
