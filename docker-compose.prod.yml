@@ -18,7 +18,7 @@ services:
   # AFFiNE Backend (Production Build)
   # ==========================================
   affine:
-    image: pelvity/affine-backend:prod
+    image: pelvity/affine-backend:stable # Use :stable, :v1.0.0, or specific version
     build:
       context: .
       dockerfile: Dockerfile.dev # TODO: Create Dockerfile.prod with multi-stage
