@@ -154,15 +154,26 @@ export class WorkspaceAccessController extends AccessController<'ws'> {
       docIds
     );
 
+    // Optional workspace-level policy to override default workspace member doc role
+    // When present, this replaces the per-doc defaultRole for workspace members
+    // (external/public fallback is still respected via Math.max below)
+    const policy = await this.models.workspaceFeature.get(
+      payload.workspaceId,
+      'doc_policy_v1'
+    );
+    const policyRole: DocRole | null = (policy?.configs as any)?.defaultWorkspaceMemberDocRole ?? null;
+
     for (const defaultDocRole of defaultDocRoles) {
       let docRole: DocRole | null;
       // if user is in workspace but doc role is not set, fallback to default doc role
       if (workspaceRole !== null && workspaceRole !== WorkspaceRole.External) {
+        const workspaceFallback =
+          (policyRole as DocRole | null) ?? defaultDocRole.workspace;
         docRole =
           defaultDocRole.external !== null
             ? // edgecase: when doc role set to [None] for workspace member, but doc is public, we should fallback to external role
-              Math.max(defaultDocRole.workspace, defaultDocRole.external)
-            : defaultDocRole.workspace;
+              Math.max(workspaceFallback, defaultDocRole.external)
+            : workspaceFallback;
       } else {
         // else fallback to external doc role
         docRole = defaultDocRole.external;

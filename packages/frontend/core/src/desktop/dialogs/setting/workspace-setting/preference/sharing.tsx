@@ -22,6 +22,9 @@ export const Sharing = () => {
   const t = useI18n();
   const shareSetting = useService(WorkspaceShareSettingService).sharePreview;
   const enableUrlPreview = useLiveData(shareSetting.enableUrlPreview$);
+  const noAccessByDefault = useLiveData(
+    shareSetting.docNoAccessByDefault$
+  );
   const loading = useLiveData(shareSetting.isLoading$);
   const permissionService = useService(WorkspacePermissionService);
   const isOwner = useLiveData(permissionService.permission.isOwner$);
@@ -48,6 +51,18 @@ export const Sharing = () => {
         <Switch
           checked={enableUrlPreview || false}
           onChange={handleCheck}
+          disabled={loading}
+        />
+      </SettingRow>
+      <SettingRow
+        name={'Docs: Members have no access by default'}
+        desc={
+          'If enabled, workspace members cannot access docs unless explicitly granted per doc.'
+        }
+      >
+        <Switch
+          checked={!!noAccessByDefault}
+          onChange={checked => shareSetting.setDocNoAccessByDefault(checked)}
           disabled={loading}
         />
       </SettingRow>
