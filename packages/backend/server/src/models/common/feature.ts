@@ -53,6 +53,8 @@ export enum Feature {
   // workspace
   UnlimitedWorkspace = 'unlimited_workspace',
   TeamPlan = 'team_plan_v1',
+  // workspace doc policy controls
+  DocPolicy = 'doc_policy_v1',
 }
 
 // TODO(@forehalo): may merge `FeatureShapes` and `FeatureConfigs`?
@@ -66,6 +68,12 @@ export const FeaturesShapes = {
   pro_plan_v1: UserPlanQuotaConfig,
   lifetime_pro_plan_v1: UserPlanQuotaConfig,
   team_plan_v1: WorkspaceQuotaConfig,
+  // workspace doc policy: default role for workspace members on docs
+  doc_policy_v1: z.object({
+    // default DocRole for workspace members when no explicit doc role is set
+    // use numeric DocRole enum value; default keeps current behavior (Manager = 30)
+    defaultWorkspaceMemberDocRole: z.number().int(),
+  }),
 } satisfies Record<Feature, z.ZodObject<any>>;
 
 export type UserFeatureName = keyof Pick<
@@ -80,7 +88,7 @@ export type UserFeatureName = keyof Pick<
 >;
 export type WorkspaceFeatureName = keyof Pick<
   typeof FeaturesShapes,
-  'unlimited_workspace' | 'team_plan_v1'
+  'unlimited_workspace' | 'team_plan_v1' | 'doc_policy_v1'
 >;
 
 export type FeatureName = UserFeatureName | WorkspaceFeatureName;
@@ -143,6 +151,14 @@ export const FeatureConfigs: {
       seatQuota: 20 * OneGB,
       historyPeriod: 30 * OneDay,
       memberLimit: 1,
+    },
+  },
+  doc_policy_v1: {
+    type: FeatureType.Feature,
+    deprecatedVersion: 1,
+    configs: {
+      // keep existing behavior as default: Manager (30)
+      defaultWorkspaceMemberDocRole: 30,
     },
   },
   early_access: {
