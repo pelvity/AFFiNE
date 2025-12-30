@@ -24,6 +24,8 @@ const logger = new DebugLogger('affine:workspace-permission');
 export class WorkspaceShareSetting extends Entity {
   enableAi$ = new LiveData<EnableAi | null>(null);
   enableUrlPreview$ = new LiveData<EnableUrlPreview | null>(null);
+  // true => workspace members have no access by default to docs
+  docNoAccessByDefault$ = new LiveData<boolean | null>(null);
   inviteLink$ = new LiveData<InviteLink | null>(null);
   isLoading$ = new LiveData(false);
   error$ = new LiveData<any>(null);
@@ -52,6 +54,17 @@ export class WorkspaceShareSetting extends Entity {
             this.inviteLink$.next(value.inviteLink);
           }
         }),
+        // also load doc policy
+        exhaustMap(() =>
+          fromPromise(signal =>
+            this.store.fetchWorkspaceDocPolicy(
+              this.workspaceService.workspace.id,
+              signal
+            )
+          ).pipe(
+            tap(noAccess => this.docNoAccessByDefault$.next(noAccess))
+          )
+        ),
         catchErrorInto(this.error$, error => {
           logger.error('Failed to fetch enableUrlPreview', error);
         }),
@@ -78,6 +91,16 @@ export class WorkspaceShareSetting extends Entity {
     await this.store.updateWorkspaceEnableAi(
       this.workspaceService.workspace.id,
       enableAi
+    );
+    await this.waitForRevalidation();
+  }
+
+  async setDocNoAccessByDefault(enabled: boolean) {
+    // map boolean to DocRole for backend mutation
+    const role = enabled ? 'None' : 'Manager';
+    await this.store.updateWorkspaceDocDefaultRole(
+      this.workspaceService.workspace.id,
+      role
     );
     await this.waitForRevalidation();
   }

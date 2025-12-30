@@ -15,7 +15,7 @@ export class WorkspaceShareSettingStore extends Store {
     if (!this.workspaceServerService.server) {
       throw new Error('No Server');
     }
-    const data = await this.workspaceServerService.server.gql({
+    const data = await (this.workspaceServerService.server as any).gql({
       query: getWorkspaceConfigQuery,
       variables: {
         id: workspaceId,
@@ -35,7 +35,7 @@ export class WorkspaceShareSettingStore extends Store {
     if (!this.workspaceServerService.server) {
       throw new Error('No Server');
     }
-    await this.workspaceServerService.server.gql({
+    await (this.workspaceServerService.server as any).gql({
       query: setEnableAiMutation,
       variables: {
         id: workspaceId,
@@ -64,6 +64,44 @@ export class WorkspaceShareSettingStore extends Store {
       context: {
         signal,
       },
+    });
+  }
+
+  async fetchWorkspaceDocPolicy(
+    workspaceId: string,
+    signal?: AbortSignal
+  ): Promise<boolean> {
+    if (!this.workspaceServerService.server) {
+      throw new Error('No Server');
+    }
+    const data = await this.workspaceServerService.server.gql({
+      query: `query GetWorkspaceDocPolicy($id: ID!) {
+        workspace(id: $id) {
+          id
+          workspaceMembersNoAccessByDefault
+        }
+      }`,
+      variables: { id: workspaceId },
+      context: { signal },
+    });
+    const ws: any = (data as any).workspace;
+    return Boolean(ws?.workspaceMembersNoAccessByDefault);
+  }
+
+  async updateWorkspaceDocDefaultRole(
+    workspaceId: string,
+    role: 'None' | 'Manager',
+    signal?: AbortSignal
+  ) {
+    if (!this.workspaceServerService.server) {
+      throw new Error('No Server');
+    }
+    await this.workspaceServerService.server.gql({
+      query: `mutation SetWorkspaceDocDefaultRole($workspaceId: ID!, $role: DocRole!) {
+        setWorkspaceDocDefaultRole(workspaceId: $workspaceId, role: $role)
+      }`,
+      variables: { workspaceId, role },
+      context: { signal },
     });
   }
 }

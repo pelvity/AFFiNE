@@ -18,10 +18,10 @@ services:
   # AFFiNE Backend (Production Build)
   # ==========================================
   affine:
-    image: pelvity/affine-backend:stable # Use :stable, :v1.0.0, or specific version
+    image: pelvity/affine-backend:prod
     build:
       context: .
-      dockerfile: Dockerfile.dev # TODO: Create Dockerfile.prod with multi-stage
+      dockerfile: Dockerfile.prod
     container_name: affine_backend_prod
     ports:
       - '3010:3010'

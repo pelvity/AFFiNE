@@ -24,6 +24,7 @@ import {
   WORKSPACE_ACTIONS,
   WorkspaceAction,
   WorkspaceRole,
+  DocRole,
 } from '../../permission';
 import { QuotaService, WorkspaceQuotaType } from '../../quota';
 import { WorkspaceService } from '../service';
@@ -139,6 +140,23 @@ export class WorkspaceResolver {
       .permissions();
 
     return mapPermissionsToGraphqlPermissions(permissions);
+  }
+
+  @ResolveField(() => Boolean, {
+    name: 'workspaceMembersNoAccessByDefault',
+    description:
+      'If true, workspace members have no access by default to docs (policy override)',
+  })
+  async workspaceMembersNoAccessByDefault(
+    @Parent() workspace: WorkspaceType
+  ) {
+    const policy = await this.models.workspaceFeature.get(
+      workspace.id,
+      'doc_policy_v1'
+    );
+    const role = (policy?.configs as any)?.defaultWorkspaceMemberDocRole ?? 30;
+    // DocRole.None is a negative sentinel; comparing to numeric - but keep FE simple by returning boolean
+    return role < 0;
   }
 
   @ResolveField(() => WorkspaceQuotaType, {
@@ -302,6 +320,30 @@ export class WorkspaceResolver {
       .workspace(id)
       .assert('Workspace.Settings.Update');
     return this.models.workspace.update(id, updates);
+  }
+
+  @Mutation(() => Boolean, {
+    description:
+      'Set default doc role for workspace members via policy feature (doc_policy_v1)',
+  })
+  async setWorkspaceDocDefaultRole(
+    @CurrentUser() user: CurrentUser,
+    @Args('workspaceId') workspaceId: string,
+    @Args('role', { type: () => DocRole }) role: DocRole
+  ) {
+    await this.ac
+      .user(user.id)
+      .workspace(workspaceId)
+      .assert('Workspace.Settings.Update');
+
+    await this.models.workspaceFeature.add(
+      workspaceId,
+      'doc_policy_v1',
+      'workspace owner update',
+      { defaultWorkspaceMemberDocRole: role }
+    );
+
+    return true;
   }
 
   @Mutation(() => Boolean)

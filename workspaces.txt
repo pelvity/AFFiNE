@@ -1,0 +1,120 @@
+Found 12 workspaces:
+[
+  {
+    "id": "8792d35a-74f8-47af-8077-e39d00e6cc56",
+    "createdAt": "2025-12-04T18:03:42.073Z"
+  },
+  {
+    "id": "ecbd7b38-7aa9-4812-9d5f-cbed5116b492",
+    "createdAt": "2025-12-06T11:00:54.680Z"
+  },
+  {
+    "id": "451d5e01-7e73-406a-a7fe-278fdf225065",
+    "createdAt": "2025-12-05T15:07:09.769Z"
+  },
+  {
+    "id": "175ad189-6c07-4ed4-b259-5ee3eda36015",
+    "createdAt": "2025-12-06T19:04:45.392Z"
+  },
+  {
+    "id": "9a91feb2-3a6d-422a-9fff-ddb4cebf6ae6",
+    "createdAt": "2025-12-05T08:42:12.714Z"
+  },
+  {
+    "id": "fd1ec03a-8ded-4f3f-8d49-2a9ffec16f5a",
+    "createdAt": "2025-12-09T16:13:58.698Z"
+  },
+  {
+    "id": "64cd90f3-cd41-4c1f-9e93-50b6d4e23773",
+    "createdAt": "2025-12-05T15:11:16.156Z"
+  },
+  {
+    "id": "3a3f9990-6c29-4968-9cf2-9fa404e935a7",
+    "createdAt": "2025-12-09T16:10:49.013Z"
+  },
+  {
+    "id": "72f264e7-bd6b-45d7-93a8-9691f5b983f3",
+    "createdAt": "2025-12-10T15:59:15.416Z"
+  },
+  {
+    "id": "d26c28f3-902a-4277-9c97-203ea500fb4f",
+    "createdAt": "2025-12-04T16:02:00.367Z"
+  },
+  {
+    "id": "03db441d-97af-4456-8dea-0cb832eed704",
+    "createdAt": "2025-12-05T14:13:42.398Z"
+  },
+  {
+    "id": "6627b0b8-ef95-4fb2-a280-9c134961aacf",
+    "createdAt": "2025-12-08T13:41:11.951Z"
+  }
+]
+
+Workspace 8792d35a-74f8-47af-8077-e39d00e6cc56:
+  Created: Thu Dec 04 2025 18:03:42 GMT+0000 (Coordinated Universal Time)
+  Members (1):
+    - admin@affine.com (admin) - Role: 99
+
+Workspace ecbd7b38-7aa9-4812-9d5f-cbed5116b492:
+  Created: Sat Dec 06 2025 11:00:54 GMT+0000 (Coordinated Universal Time)
+  Members (2):
+    - admin@affine.pro (admin) - Role: 99
+    - ivan_english@gmail.com (ivan_english) - Role: 1
+
+Workspace 451d5e01-7e73-406a-a7fe-278fdf225065:
+  Created: Fri Dec 05 2025 15:07:09 GMT+0000 (Coordinated Universal Time)
+  Members (2):
+    - admin@affine.pro (admin) - Role: 99
+    - olokota@gmail.com (olokota) - Role: 1
+
+Workspace 175ad189-6c07-4ed4-b259-5ee3eda36015:
+  Created: Sat Dec 06 2025 19:04:45 GMT+0000 (Coordinated Universal Time)
+  Members (2):
+    - admin@affine.pro (admin) - Role: 99
+    - mark_it@gmail.com (mark_it) - Role: 1
+
+Workspace 9a91feb2-3a6d-422a-9fff-ddb4cebf6ae6:
+  Created: Fri Dec 05 2025 08:42:12 GMT+0000 (Coordinated Universal Time)
+  Members (1):
+    - admin@affine.pro (admin) - Role: 99
+
+Workspace fd1ec03a-8ded-4f3f-8d49-2a9ffec16f5a:
+  Created: Tue Dec 09 2025 16:13:58 GMT+0000 (Coordinated Universal Time)
+  Members (1):
+    - artem.math@gmail.com (artem.math) - Role: 99
+
+Workspace 64cd90f3-cd41-4c1f-9e93-50b6d4e23773:
+  Created: Fri Dec 05 2025 15:11:16 GMT+0000 (Coordinated Universal Time)
+  Members (1):
+    - olokota@gmail.com (olokota) - Role: 99
+
+Workspace 3a3f9990-6c29-4968-9cf2-9fa404e935a7:
+  Created: Tue Dec 09 2025 16:10:49 GMT+0000 (Coordinated Universal Time)
+  Members (1):
+    - artem.math@gmail.com (artem.math) - Role: 99
+
+Workspace 72f264e7-bd6b-45d7-93a8-9691f5b983f3:
+  Created: Wed Dec 10 2025 15:59:15 GMT+0000 (Coordinated Universal Time)
+  Members (1):
+    - ivan_english@gmail.com (ivan_english) - Role: 99
+
+Workspace d26c28f3-902a-4277-9c97-203ea500fb4f:
+  Created: Thu Dec 04 2025 16:02:00 GMT+0000 (Coordinated Universal Time)
+  Members (7):
+    - admin@affine.pro (admin) - Role: 99
+    - artem.anglish@gmail.com (artem.anglish) - Role: 1
+    - artem_bmw@gmail.com (artem_bmw) - Role: 1
+    - dmxer@gmail.com (dmxer) - Role: 1
+    - artem.math@gmail.com (artem.math) - Role: 1
+    - ivan_english@gmail.com (ivan_english) - Role: 1
+    - uliana_en@gmail.com (uliana_en) - Role: 1
+
+Workspace 03db441d-97af-4456-8dea-0cb832eed704:
+  Created: Fri Dec 05 2025 14:13:42 GMT+0000 (Coordinated Universal Time)
+  Members (1):
+    - artem.anglish@gmail.com (artem.anglish) - Role: 99
+
+Workspace 6627b0b8-ef95-4fb2-a280-9c134961aacf:
+  Created: Mon Dec 08 2025 13:41:11 GMT+0000 (Coordinated Universal Time)
+  Members (1):
+    - red.hood@gmail.com (red.hood) - Role: 99
