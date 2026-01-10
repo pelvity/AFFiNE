@@ -32,11 +32,11 @@ services:
       - AFFINE_ENV=production
       - AFFINE_INDEXER_ENABLED=false
       - REDIS_SERVER_HOST=redis
-      - DATABASE_URL=postgresql://affine:SecureProductionPassword123@postgres:5432/affine
+      # - DATABASE_URL=postgresql://affine:SecureProductionPassword123@postgres:5432/affine
       - PORT=3010
       - HOST=0.0.0.0
       - AFFINE_SERVER_HTTPS=false
-      - AFFINE_SERVER_EXTERNAL_URL=http://localhost:3010
+      # - AFFINE_SERVER_EXTERNAL_URL=http://localhost:3010
       - AFFINE_AUTH_ENABLED=true
       # Copilot/AI features
       - AFFINE_COPILOT_ENABLED=true
@@ -48,13 +48,14 @@ services:
       # Only mount persistent data, NO source code
       - ${CONFIG_LOCATION:-/root/.affine/config}:/root/.affine/config
       - ${UPLOAD_LOCATION:-/root/.affine/storage}:/root/.affine/storage
+      - ./temp_mobile:/app/packages/backend/server/static/mobile
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      gemini-bridge:
-        condition: service_started
+      # gemini-bridge:
+      #   condition: service_started
     networks:
       - affine_prod_net
     restart: unless-stopped
@@ -94,7 +95,7 @@ services:
       - .env.prod.local
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://affine:SecureProductionPassword123@postgres:5432/affine
+      # - DATABASE_URL=postgresql://affine:SecureProductionPassword123@postgres:5432/affine
       - REDIS_SERVER_HOST=redis
     command: ['sh', '-c', 'yarn workspace @affine/server prisma migrate deploy']
     volumes:
@@ -116,41 +117,41 @@ services:
   # ==========================================
   # Gemini WebAPI Bridge (Production)
   # ==========================================
-  gemini-bridge:
-    build:
-      context: ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon
-      dockerfile: Dockerfile
-    image: gemini-bridge-prod:latest
-    container_name: affine_gemini_prod
-    shm_size: '2gb'
-    # Don't expose port externally in production
-    expose:
-      - '8765'
-    environment:
-      - BRIDGE_HOST=0.0.0.0
-      - BRIDGE_PORT=8765
-      - COOKIE_REFRESH_INTERVAL=3600
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-    volumes:
-      # Bind mount the actual cookie file from the addon project
-      - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.gemini_cookies.json:/app/.gemini_cookies.json
-      - gemini_browser:/app/.browser_profile
-    networks:
-      - affine_prod_net
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
-    logging:
-      driver: 'json-file'
-      options:
-        max-size: '10m'
-        max-file: '3'
+  # gemini-bridge:
+  #   build:
+  #     context: ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon
+  #     dockerfile: Dockerfile
+  #   image: gemini-bridge-prod:latest
+  #   container_name: affine_gemini_prod
+  #   shm_size: '2gb'
+  #   # Don't expose port externally in production
+  #   expose:
+  #     - '8765'
+  #   environment:
+  #     - BRIDGE_HOST=0.0.0.0
+  #     - BRIDGE_PORT=8765
+  #     - COOKIE_REFRESH_INTERVAL=3600
+  #     - LOG_LEVEL=${LOG_LEVEL:-info}
+  #   volumes:
+  #     # Bind mount the actual cookie file from the addon project
+  #     - ../wind_env_setup/ai-guides-hub/projects/affine-personal-addon/.gemini_cookies.json:/app/.gemini_cookies.json
+  #     - gemini_browser:/app/.browser_profile
+  #   networks:
+  #     - affine_prod_net
+  #   restart: unless-stopped
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '1'
+  #         memory: 2G
+  #       reservations:
+  #         cpus: '0.5'
+  #         memory: 1G
+  #   logging:
+  #     driver: 'json-file'
+  #     options:
+  #       max-size: '10m'
+  #       max-file: '3'
 
   # ==========================================
   # PostgreSQL Database (Production)
@@ -187,7 +188,7 @@ services:
       test:
         [
           'CMD-SHELL',
-          'PGPASSWORD=SecureProductionPassword123 pg_isready -U affine -d affine -h localhost',
+          'PGPASSWORD=postgres pg_isready -U postgres -d affine -h localhost',
         ]
       interval: 10s
       timeout: 5s
@@ -258,6 +259,43 @@ services:
       options:
         max-size: '10m'
         max-file: '3'
+
+  # ==========================================
+  # Backup Service (Production)
+  # ==========================================
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    container_name: affine_backup_prod
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=affine
+      # Using the same password as defined in env file or context
+      # In this file, POSTGRES_PASSWORD=postgres is generic, usually .env.prod.local overrides it.
+      # We need to ensure we pass the right password. 
+      # .env.prod.local usually sets POSTGRES_PASSWORD. 
+      # We just pass the env vars through.
+      - PGPASSWORD=${DB_PASSWORD:-SecureProductionPassword123} 
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-SecureProductionPassword123}
+      - POSTGRES_DB=affine
+      - RCLONE_REMOTE=gdrive_backups:affine-backups/awsdawid
+    volumes:
+      # Mount the config dir from the host to allow token refreshes
+      - /root/.config/rclone:/root/.config/rclone
+      # Persist local backups if needed, or just ephemeral
+      - ./data/backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - affine_prod_net
+    restart: unless-stopped
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '5m'
+        max-file: '2'
 
 # ==========================================
 # Networks
