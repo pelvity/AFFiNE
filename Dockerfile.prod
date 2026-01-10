@@ -10,14 +10,19 @@ RUN corepack enable
 
 # Install Build Dependencies (Rust, C++, etc.)
 RUN apt-get update && apt-get install -y curl build-essential git python3
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
+# Install Rust from official image
+COPY --from=rust:1.92-bookworm /usr/local/cargo /usr/local/cargo
+COPY --from=rust:1.92-bookworm /usr/local/rustup /usr/local/rustup
+ENV PATH="/usr/local/cargo/bin:${PATH}"
+ENV RUSTUP_HOME="/usr/local/rustup"
+ENV CARGO_HOME="/usr/local/cargo"
 
 # Copy source code
 COPY . .
 
 # Install dependencies
-ENV NODE_OPTIONS="--max-old-space-size=8192"
+# Reduced from 8192 to 4096 for 4GB RAM server
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN yarn install
 
 # Build Native Backend
@@ -36,7 +41,8 @@ RUN git init && git add . && git config user.email "build@affine.pro" && git con
 RUN yarn affine bundle -p @affine/web
 
 # Build Backend Server
-RUN yarn workspace @affine/server build
+# Use direct bundle command as workspace script fails silently
+RUN yarn affine bundle -p @affine/server
 
 # Prune dev dependencies to reduce size (for the runner stage copy)
 # Note: In a complex monorepo, sometimes pruning removes too much, 
@@ -81,8 +87,8 @@ COPY --from=builder /app/packages /app/packages
 # 4. Prepare static files directory
 RUN mkdir -p /app/packages/backend/server/static && \
     cp -r /app/packages/frontend/apps/web/dist/* /app/packages/backend/server/static/ && \
-    mkdir -p /app/packages/backend/server/static/admin && \
-    echo '<!DOCTYPE html><html><head><title>AFFiNE Admin</title></head><body><h1>AFFiNE Admin</h1></body></html>' > /app/packages/backend/server/static/admin/selfhost.html
+    mkdir -p /app/packages/backend/server/static/mobile && \
+    echo "{}" > /app/packages/backend/server/static/mobile/assets-manifest.json
 
 # Expose port
 EXPOSE 3010
