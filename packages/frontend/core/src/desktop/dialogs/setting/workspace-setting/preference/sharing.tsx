@@ -21,13 +21,18 @@ export const SharingPanel = () => {
 export const Sharing = () => {
   const t = useI18n();
   const shareSetting = useService(WorkspaceShareSettingService).sharePreview;
+  const enableSharing = useLiveData(shareSetting.enableSharing$);
   const enableUrlPreview = useLiveData(shareSetting.enableUrlPreview$);
-  const noAccessByDefault = useLiveData(
-    shareSetting.docNoAccessByDefault$
-  );
   const loading = useLiveData(shareSetting.isLoading$);
   const permissionService = useService(WorkspacePermissionService);
   const isOwner = useLiveData(permissionService.permission.isOwner$);
+
+  const handleToggleSharing = useAsyncCallback(
+    async (checked: boolean) => {
+      await shareSetting.setEnableSharing(checked);
+    },
+    [shareSetting]
+  );
 
   const handleCheck = useAsyncCallback(
     async (checked: boolean) => {
@@ -55,14 +60,16 @@ export const Sharing = () => {
         />
       </SettingRow>
       <SettingRow
-        name={'Docs: Members have no access by default'}
-        desc={
-          'If enabled, workspace members cannot access docs unless explicitly granted per doc.'
-        }
+        name={t[
+          'com.affine.settings.workspace.sharing.workspace-sharing.title'
+        ]()}
+        desc={t[
+          'com.affine.settings.workspace.sharing.workspace-sharing.description'
+        ]()}
       >
         <Switch
-          checked={!!noAccessByDefault}
-          onChange={checked => shareSetting.setDocNoAccessByDefault(checked)}
+          checked={enableSharing ?? true}
+          onChange={handleToggleSharing}
           disabled={loading}
         />
       </SettingRow>
