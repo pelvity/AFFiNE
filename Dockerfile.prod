@@ -28,9 +28,12 @@ RUN yarn install
 # Build Native Backend
 RUN rm -f packages/backend/native/server-native.node
 RUN yarn workspace @affine/server-native build
-# Fix native module naming for production
+# Fix native module naming for production and satisfy Webpack bundle requirements
 RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.linux-x64-gnu.node || true
 RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.node || true
+RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.x64.node || true
+RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.arm64.node || true
+RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.armv7.node || true
 
 # Build reader dependency
 RUN yarn workspace @affine/reader build
