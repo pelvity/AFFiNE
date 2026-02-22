@@ -1,0 +1,50 @@
+FROM node:22-bookworm
+
+WORKDIR /app
+
+# Enable corepack
+RUN corepack enable
+
+# Install Rust
+RUN apt-get update && apt-get install -y curl build-essential
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Copy source
+COPY . .
+
+# Install dependencies
+RUN yarn install
+
+# Build native module
+RUN rm -f packages/backend/native/server-native.node
+RUN yarn workspace @affine/server-native build
+RUN ls -l packages/backend/native/server-native.node
+
+# Build reader
+RUN yarn workspace @affine/reader build
+
+# Frontend is already built locally - just copy to static
+RUN mkdir -p /app/packages/backend/server/static
+RUN cp -r /app/packages/frontend/apps/web/dist/* /app/packages/backend/server/static/
+
+# Create admin files
+RUN mkdir -p /app/packages/backend/server/static/admin
+RUN echo '<!DOCTYPE html><html><head><title>AFFiNE Admin</title></head><body><h1>AFFiNE Admin</h1></body></html>' > /app/packages/backend/server/static/admin/selfhost.html
+
+# Create mobile assets manifest (required by backend)
+RUN mkdir -p /app/packages/backend/server/static/mobile
+RUN echo '{"js":[],"css":[]}' > /app/packages/backend/server/static/mobile/assets-manifest.json
+
+# Fix native module
+RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.x64.node || true
+
+# Build backend
+RUN yarn workspace @affine/server build
+
+ENV PORT=3010
+ENV NODE_ENV=production
+
+EXPOSE 3010
+
+CMD ["node", "packages/backend/server/dist/main.js"]

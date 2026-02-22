@@ -1,7 +1,30 @@
 node_modules
 **/node_modules
 .git
+.github/**/*.md
+.gitignore
 .cache
 .yarn/cache
 **/dist
 **/.next
+
+# Local dependency/build artifacts
+/target
+
+# Yarn v4 artifacts (not needed for image packaging)
+/.yarn/unplugged
+/.yarn/install-state.gz
+/.pnp.*
+
+# Test artifacts
+/test-results
+/playwright-report
+/coverage
+/.coverage
+
+# OS noise
+.DS_Store
+
+# Sourcemaps (keep server sourcemap for backend stacktraces)
+**/*.map
+!packages/backend/server/dist/main.js.map

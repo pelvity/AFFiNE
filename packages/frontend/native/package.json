@@ -41,8 +41,8 @@
     "build": "napi build -p affine_native --platform --release",
     "build:debug": "napi build -p affine_native --platform",
     "universal": "napi universal",
-    "test": "ava",
+    "test": "ava --no-worker-threads --concurrency=2",
     "version": "napi version"
   },
-  "version": "0.25.7"
+  "version": "0.26.1"
 }

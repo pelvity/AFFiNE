@@ -37,6 +37,7 @@ const INTEGRATION_LIST = [
     desc: 'com.affine.integration.calendar.desc',
     icon: <TodayIcon />,
     setting: <CalendarSettingPanel />,
+    cloud: true,
   },
   {
     id: 'mcp-server' as const,
