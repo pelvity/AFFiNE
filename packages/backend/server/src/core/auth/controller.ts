@@ -16,7 +16,6 @@ import type { Request, Response } from 'express';
 
 import {
   ActionForbidden,
-  Cache,
   Config,
   CryptoHelper,
   EmailTokenNotFound,
@@ -53,7 +52,9 @@ interface MagicLinkCredential {
   client_nonce?: string;
 }
 
-const OTP_CACHE_KEY = (otp: string) => `magic-link-otp:${otp}`;
+interface OpenAppSignInCredential {
+  code: string;
+}
 
 @Throttle('strict')
 @Controller('/api/auth')
@@ -65,7 +66,6 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly models: Models,
     private readonly config: Config,
-    private readonly cache: Cache,
     private readonly crypto: CryptoHelper
   ) {
     if (env.dev) {
@@ -111,11 +111,7 @@ export class AuthController {
   async signIn(
     @Req() req: Request,
     @Res() res: Response,
-    @Body() credential: SignInCredential,
-    /**
-     * @deprecated
-     */
-    @Query('redirect_uri') redirectUri?: string
+    @Body() credential: SignInCredential
   ) {
     validators.assertValidEmail(credential.email);
     const canSignIn = await this.auth.canSignIn(credential.email);
@@ -132,11 +128,9 @@ export class AuthController {
       );
     } else {
       await this.sendMagicLink(
-        req,
         res,
         credential.email,
         credential.callbackUrl,
-        redirectUri,
         credential.client_nonce
       );
     }
@@ -183,12 +177,26 @@ export class AuthController {
   async sendMagicLink(
     req: Request,
     res: Response,
+    res: Response,
     email: string,
     callbackUrl = '/magic-link',
-    redirectUrl?: string,
     clientNonce?: string
   ) {
-    // Check if user exists to validate status/signup permissions
+    if (!this.url.isAllowedCallbackUrl(callbackUrl)) {
+      throw new ActionForbidden();
+    }
+
+    const callbackUrlObj = this.url.url(callbackUrl);
+    const redirectUriInCallback =
+      callbackUrlObj.searchParams.get('redirect_uri');
+    if (
+      redirectUriInCallback &&
+      !this.url.isAllowedRedirectUri(redirectUriInCallback)
+    ) {
+      throw new ActionForbidden();
+    }
+
+    // send email magic link
     const user = await this.models.user.getUserByEmail(email, {
       withDisabled: true,
     });
@@ -242,15 +250,42 @@ export class AuthController {
       // New users MUST provide a password - reject passwordless signup
       throw new WrongSignInCredentials({ email });
     }
+    const ttlInSec = 30 * 60;
+    const token = await this.models.verificationToken.create(
+      TokenType.SignIn,
+      email,
+      ttlInSec
+    );
+
+    const otp = this.crypto.otp();
+    await this.models.magicLinkOtp.upsert(email, otp, token, clientNonce);
+
+    const magicLink = this.url.link(callbackUrl, { token: otp, email });
+    if (env.dev) {
+      // make it easier to test in dev mode
+      this.logger.debug(`Magic link: ${magicLink}`);
+    }
+
+    await this.auth.sendSignInEmail(email, magicLink, otp, !user);
+
+    res.status(HttpStatus.OK).send({
+      email: email,
+    });
   }
 
   @Public()
+  /**
+   * @deprecated Kept for 0.25 clients that still call GET `/api/auth/sign-out`.
+   * Use POST `/api/auth/sign-out` instead.
+   */
   @Get('/sign-out')
-  async signOut(
+  async signOutDeprecated(
     @Res() res: Response,
     @Session() session: Session | undefined,
     @Query('user_id') userId: string | undefined
   ) {
+    res.setHeader('Deprecation', 'true');
+
     if (!session) {
       res.status(HttpStatus.OK).send({});
       return;
@@ -260,6 +295,79 @@ export class AuthController {
     await this.auth.refreshCookies(res, session.sessionId);
 
     res.status(HttpStatus.OK).send({});
+  }
+
+  @Public()
+  @Post('/sign-out')
+  async signOut(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Session() session: Session | undefined,
+    @Query('user_id') userId: string | undefined
+  ) {
+    if (!session) {
+      res.status(HttpStatus.OK).send({});
+      return;
+    }
+
+    const csrfCookie = req.cookies?.[AuthService.csrfCookieName] as
+      | string
+      | undefined;
+    const csrfHeader = req.get('x-affine-csrf-token');
+    if (
+      csrfHeader && // optional for backward compatibility, drop after 0.25.0 outdated
+      (!csrfCookie || csrfCookie !== csrfHeader)
+    ) {
+      throw new ActionForbidden();
+    }
+
+    await this.auth.signOut(session.sessionId, userId);
+    await this.auth.refreshCookies(res, session.sessionId);
+
+    res.status(HttpStatus.OK).send({});
+  }
+
+  @Public()
+  @UseNamedGuard('version')
+  @Post('/open-app/sign-in-code')
+  async openAppSignInCode(@CurrentUser() user?: CurrentUser) {
+    if (!user) {
+      throw new ActionForbidden();
+    }
+
+    // short-lived one-time code for handing off the authenticated session
+    const code = await this.models.verificationToken.create(
+      TokenType.OpenAppSignIn,
+      user.id,
+      5 * 60
+    );
+
+    return { code };
+  }
+
+  @Public()
+  @UseNamedGuard('version')
+  @Post('/open-app/sign-in')
+  async openAppSignIn(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() credential: OpenAppSignInCredential
+  ) {
+    if (!credential?.code) {
+      throw new InvalidAuthState();
+    }
+
+    const tokenRecord = await this.models.verificationToken.get(
+      TokenType.OpenAppSignIn,
+      credential.code
+    );
+
+    if (!tokenRecord?.credential) {
+      throw new InvalidAuthState();
+    }
+
+    await this.auth.setCookies(req, res, tokenRecord.credential);
+    res.send({ id: tokenRecord.credential });
   }
 
   @Public()
@@ -277,22 +385,19 @@ export class AuthController {
 
     validators.assertValidEmail(email);
 
-    const cacheKey = OTP_CACHE_KEY(otp);
-    const cachedToken = await this.cache.get<{
-      token: string;
-      clientNonce: string;
-    }>(cacheKey);
-    let token: string | undefined;
-    if (cachedToken && typeof cachedToken === 'object') {
-      token = cachedToken.token;
-      if (cachedToken.clientNonce && cachedToken.clientNonce !== clientNonce) {
+    const consumed = await this.models.magicLinkOtp.consume(
+      email,
+      otp,
+      clientNonce
+    );
+    if (!consumed.ok) {
+      if (consumed.reason === 'nonce_mismatch') {
         throw new InvalidAuthState();
       }
-    }
-
-    if (!token) {
       throw new InvalidEmailToken();
     }
+
+    const token = consumed.token;
 
     const tokenRecord = await this.models.verificationToken.verify(
       TokenType.SignIn,

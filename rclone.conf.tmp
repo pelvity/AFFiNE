@@ -1,0 +1,5 @@
+[gdrive_backups]
+type = drive
+scope = drive
+token = {"access_token":"ya29.a0AUMWg_IpArno7HCsvFiftC7DP5sgzf9hqwY6JiAo1z-9CY4vmiWWAYMrUADI1U8D86ROsUFiOiQG1nbXxk4vTRR5xvdt84","token_type":"Bearer","refresh_token":"1//0cxODmg9J_xD_Z5myr7QYRAG","expiry":"2026-01-10T15:19:49.996618944Z","expires_in":3599}
+team_drive = 

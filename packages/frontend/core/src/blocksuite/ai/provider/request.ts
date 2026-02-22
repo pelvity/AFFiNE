@@ -21,7 +21,6 @@ export type TextToTextOptions = {
   isRootSession?: boolean;
   postfix?: (text: string) => string;
   reasoning?: boolean;
-  webSearch?: boolean;
   modelId?: string;
   toolsConfig?: AIToolsConfig;
 };
@@ -119,7 +118,6 @@ export function textToText({
   endpoint = Endpoint.Stream,
   postfix,
   reasoning,
-  webSearch,
   modelId,
   toolsConfig,
 }: TextToTextOptions) {
@@ -143,7 +141,6 @@ export function textToText({
             sessionId,
             messageId,
             reasoning,
-            webSearch,
             modelId,
             toolsConfig,
           },
@@ -206,7 +203,6 @@ export function textToText({
           sessionId,
           messageId,
           reasoning,
-          webSearch,
           modelId,
         });
       })(),

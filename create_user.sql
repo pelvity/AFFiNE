@@ -1,0 +1,3 @@
+CREATE USER affine WITH PASSWORD 'SecureProductionPassword123';
+GRANT ALL PRIVILEGES ON DATABASE affine TO affine;
+ALTER DATABASE affine OWNER TO affine;

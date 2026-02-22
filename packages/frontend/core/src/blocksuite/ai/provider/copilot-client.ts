@@ -6,7 +6,7 @@ import {
   addContextCategoryMutation,
   addContextDocMutation,
   addContextFileMutation,
-  applyDocUpdatesQuery,
+  applyDocUpdatesMutation,
   cleanupCopilotSessionMutation,
   createCopilotContextMutation,
   createCopilotMessageMutation,
@@ -446,7 +446,6 @@ export class CopilotClient {
     sessionId,
     messageId,
     reasoning,
-    webSearch,
     modelId,
     toolsConfig,
     signal,
@@ -454,7 +453,6 @@ export class CopilotClient {
     sessionId: string;
     messageId?: string;
     reasoning?: boolean;
-    webSearch?: boolean;
     modelId?: string;
     toolsConfig?: AIToolsConfig;
     signal?: AbortSignal;
@@ -464,7 +462,6 @@ export class CopilotClient {
     const queryString = this.paramsToQueryString({
       messageId,
       reasoning,
-      webSearch,
       modelId,
       toolsConfig,
     });
@@ -484,14 +481,12 @@ export class CopilotClient {
       sessionId,
       messageId,
       reasoning,
-      webSearch,
       modelId,
       toolsConfig,
     }: {
       sessionId: string;
       messageId?: string;
       reasoning?: boolean;
-      webSearch?: boolean;
       modelId?: string;
       toolsConfig?: AIToolsConfig;
     },
@@ -501,7 +496,6 @@ export class CopilotClient {
     const queryString = this.paramsToQueryString({
       messageId,
       reasoning,
-      webSearch,
       modelId,
       toolsConfig,
     });
@@ -561,7 +555,7 @@ export class CopilotClient {
     updates: string
   ) {
     return this.gql({
-      query: applyDocUpdatesQuery,
+      query: applyDocUpdatesMutation,
       variables: {
         workspaceId,
         docId,

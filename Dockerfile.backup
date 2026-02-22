@@ -1,0 +1,21 @@
+FROM postgres:16-alpine
+
+# Install basic tools and rclone
+RUN apk add --no-cache bash curl unzip
+
+# Install rclone
+RUN curl https://rclone.org/install.sh | bash
+
+# Create backup directories
+RUN mkdir -p /backups /var/log/cron
+
+# Copy backup script
+COPY backup.sh /usr/local/bin/backup.sh
+RUN chmod +x /usr/local/bin/backup.sh
+
+# Setup minimal cron
+# Run daily at 02:00
+RUN echo "0 2 * * * /usr/local/bin/backup.sh >> /var/log/cron/backup.log 2>&1" > /etc/crontabs/root
+
+# Start cron in foreground
+CMD ["crond", "-f", "-d", "8"]
