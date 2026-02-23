@@ -128,6 +128,7 @@ export class AuthController {
       );
     } else {
       await this.sendMagicLink(
+        req,
         res,
         credential.email,
         credential.callbackUrl,
@@ -176,7 +177,6 @@ export class AuthController {
 
   async sendMagicLink(
     req: Request,
-    res: Response,
     res: Response,
     email: string,
     callbackUrl = '/magic-link',

@@ -42,6 +42,7 @@ RUN yarn workspace @affine/reader build
 # Initialize git for build versioning
 RUN git init && git add . && git config user.email "build@affine.pro" && git config user.name "Build" && git commit -m "build"
 RUN yarn affine bundle -p @affine/web
+RUN yarn affine bundle -p @affine/admin
 
 # Build Backend Server
 # Use direct bundle command as workspace script fails silently
@@ -90,6 +91,8 @@ COPY --from=builder /app/packages /app/packages
 # 4. Prepare static files directory
 RUN mkdir -p /app/packages/backend/server/static && \
     cp -r /app/packages/frontend/apps/web/dist/* /app/packages/backend/server/static/ && \
+    mkdir -p /app/packages/backend/server/static/admin && \
+    cp -r /app/packages/frontend/admin/dist/* /app/packages/backend/server/static/admin/ && \
     mkdir -p /app/packages/backend/server/static/mobile && \
     echo "{}" > /app/packages/backend/server/static/mobile/assets-manifest.json
 

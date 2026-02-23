@@ -36,8 +36,10 @@ RUN echo '<!DOCTYPE html><html><head><title>AFFiNE Admin</title></head><body><h1
 RUN mkdir -p /app/packages/backend/server/static/mobile
 RUN echo '{"js":[],"css":[]}' > /app/packages/backend/server/static/mobile/assets-manifest.json
 
-# Fix native module
+# Fix native module by providing dummy files for alternative architectures so rspack bundle doesn't fail
 RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.x64.node || true
+RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.arm64.node || true
+RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.armv7.node || true
 
 # Build backend
 RUN yarn workspace @affine/server build

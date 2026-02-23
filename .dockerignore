@@ -28,3 +28,4 @@ node_modules
 # Sourcemaps (keep server sourcemap for backend stacktraces)
 **/*.map
 !packages/backend/server/dist/main.js.map
+!packages/frontend/apps/web/dist
