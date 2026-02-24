@@ -18,10 +18,7 @@ services:
   # AFFiNE Backend (Production Build)
   # ==========================================
   affine:
-    image: pelvity/affine-backend:prod
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
+    image: ghcr.io/${GITHUB_REPOSITORY:-pelvity/affine}:latest
     container_name: affine_backend_prod
     ports:
       - '3010:3010'
@@ -89,7 +86,7 @@ services:
   # Database Migration Job (Production)
   # ==========================================
   affine_migration:
-    image: pelvity/affine-backend:prod
+    image: ghcr.io/${GITHUB_REPOSITORY:-pelvity/affine}:latest
     container_name: affine_migration_prod
     env_file:
       - .env.prod.local
