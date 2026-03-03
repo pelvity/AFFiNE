@@ -18,7 +18,7 @@ services:
   # AFFiNE Backend (Production Build)
   # ==========================================
   affine:
-    image: ghcr.io/${GITHUB_REPOSITORY:-pelvity/affine}:latest
+    image: ${AFFINE_IMAGE:-ghcr.io/pelvity/affine:latest}
     container_name: affine_backend_prod
     ports:
       - '3010:3010'
@@ -86,7 +86,7 @@ services:
   # Database Migration Job (Production)
   # ==========================================
   affine_migration:
-    image: ghcr.io/${GITHUB_REPOSITORY:-pelvity/affine}:latest
+    image: ${AFFINE_IMAGE:-ghcr.io/pelvity/affine:latest}
     container_name: affine_migration_prod
     env_file:
       - .env.prod.local
@@ -268,20 +268,19 @@ services:
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=affine
-      # Using the same password as defined in env file or context
-      # In this file, POSTGRES_PASSWORD=postgres is generic, usually .env.prod.local overrides it.
-      # We need to ensure we pass the right password. 
-      # .env.prod.local usually sets POSTGRES_PASSWORD. 
-      # We just pass the env vars through.
       - PGPASSWORD=${DB_PASSWORD:-SecureProductionPassword123} 
       - POSTGRES_PASSWORD=${DB_PASSWORD:-SecureProductionPassword123}
       - POSTGRES_DB=affine
       - RCLONE_REMOTE=gdrive_backups:affine-backups/awsdawid
+      - HEALTHCHECKS_URL=${HEALTHCHECKS_URL:-}
     volumes:
       # Mount the config dir from the host to allow token refreshes
       - /root/.config/rclone:/root/.config/rclone
       # Persist local backups if needed, or just ephemeral
       - ./data/backups:/backups
+      # Mount AFFiNE data to be backed up
+      - ${CONFIG_LOCATION:-/root/.affine/config}:/root/.affine/config:ro
+      - ${UPLOAD_LOCATION:-/root/.affine/storage}:/root/.affine/storage:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -10,6 +10,10 @@ node_modules
 
 # Local dependency/build artifacts
 /target
+*.tar
+*.tar.gz
+*.zip
+*.log
 
 # Yarn v4 artifacts (not needed for image packaging)
 /.yarn/unplugged

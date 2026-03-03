@@ -24,13 +24,16 @@ RUN ls -l packages/backend/native/server-native.node
 # Build reader
 RUN yarn workspace @affine/reader build
 
-# Frontend is already built locally - just copy to static
+# Build frontend so it can be copied to static
+RUN git init && git add . && git config user.email "build@affine.pro" && git config user.name "Build" && git commit -m "build" || true
+RUN yarn affine bundle -p @affine/web
 RUN mkdir -p /app/packages/backend/server/static
 RUN cp -r /app/packages/frontend/apps/web/dist/* /app/packages/backend/server/static/
 
-# Create admin files
+# Build admin panel
+RUN yarn affine bundle -p @affine/admin
 RUN mkdir -p /app/packages/backend/server/static/admin
-RUN echo '<!DOCTYPE html><html><head><title>AFFiNE Admin</title></head><body><h1>AFFiNE Admin</h1></body></html>' > /app/packages/backend/server/static/admin/selfhost.html
+RUN cp -r /app/packages/frontend/admin/dist/* /app/packages/backend/server/static/admin/
 
 # Create mobile assets manifest (required by backend)
 RUN mkdir -p /app/packages/backend/server/static/mobile
