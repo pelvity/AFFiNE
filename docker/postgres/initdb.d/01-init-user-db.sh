@@ -6,9 +6,9 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     DO $$
     BEGIN
         IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'affine') THEN
-            CREATE USER affine WITH PASSWORD 'SecureProductionPassword123';
-        ELSE
-            ALTER USER affine WITH PASSWORD 'SecureProductionPassword123';
+        CREATE USER affine WITH PASSWORD 'pelvity';
+    ELSE
+        ALTER USER affine WITH PASSWORD 'pelvity';
         END IF;
     END
     $$;

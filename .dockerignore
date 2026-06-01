@@ -2,7 +2,6 @@ node_modules
 **/node_modules
 .git
 .github/**/*.md
-.gitignore
 .cache
 .yarn/cache
 **/dist

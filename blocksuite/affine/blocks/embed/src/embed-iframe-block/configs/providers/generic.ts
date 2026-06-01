@@ -27,8 +27,10 @@ function isValidGenericEmbedUrl(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
 
-    // Only allow HTTPS for security
-    if (parsedUrl.protocol !== 'https:') {
+    // Allow HTTP for localhost during development, otherwise only allow HTTPS
+    const isLocalhost =
+      parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1';
+    if (parsedUrl.protocol !== 'https:' && !isLocalhost) {
       return false;
     }
 

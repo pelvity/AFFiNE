@@ -40,7 +40,8 @@ RUN yarn workspace @affine/reader build
 
 # Build Frontend
 # Initialize git for build versioning
-RUN git init && git add . && git config user.email "build@affine.pro" && git config user.name "Build" && git commit -m "build"
+# Ensure .gitignore exists and covers node_modules (safety net for dockerignore issues)
+RUN echo "node_modules" >> .gitignore && echo "dist" >> .gitignore && git init && git add . && git config user.email "build@affine.pro" && git config user.name "Build" && git commit -m "build"
 RUN yarn affine bundle -p @affine/web
 RUN yarn affine bundle -p @affine/admin
 
