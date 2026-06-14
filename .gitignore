@@ -135,3 +135,4 @@ redundant_files.txt
 *.tar.gz
 *.zip
 !packages/**/*.zip
+terraform/.terraform/
