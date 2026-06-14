@@ -305,6 +305,14 @@ export const adminUpdateWorkspaceMutation = {
 }`,
 };
 
+export const adminAddWorkspaceMemberMutation = {
+  id: 'adminAddWorkspaceMemberMutation' as const,
+  op: 'adminAddWorkspaceMember',
+  query: `mutation adminAddWorkspaceMember($workspaceId: String!, $email: String!) {
+  adminAddWorkspaceMember(workspaceId: $workspaceId, email: $email)
+}`,
+};
+
 export const adminWorkspaceQuery = {
   id: 'adminWorkspaceQuery' as const,
   op: 'adminWorkspace',

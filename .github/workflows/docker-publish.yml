@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - deploy-acer
+      - dev
 
 env:
   REGISTRY: ghcr.io
@@ -39,6 +40,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/deploy-acer' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
             type=sha
 
       - name: Build and push Docker image

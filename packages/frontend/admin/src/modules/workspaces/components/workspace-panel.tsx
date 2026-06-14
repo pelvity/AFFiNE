@@ -9,6 +9,7 @@ import { Separator } from '@affine/admin/components/ui/separator';
 import { Switch } from '@affine/admin/components/ui/switch';
 import type { FeatureType } from '@affine/graphql';
 import {
+  adminAddWorkspaceMemberMutation,
   adminUpdateWorkspaceMutation,
   adminWorkspaceQuery,
   adminWorkspacesQuery,
@@ -272,8 +273,10 @@ function WorkspacePanelContent({
           />
         </div>
 
+        <AddMemberSection workspaceId={workspace.id} onAdded={revalidate} />
+
         <div className="rounded-xl border border-border/60 bg-card shadow-sm">
-          <div className="px-3 py-2 text-sm font-medium">Members</div>
+          <div className="px-3 py-2 text-sm font-medium">Members ({workspace.memberCount})</div>
           <Separator />
           <div className="flex flex-col divide-y">
             {memberList.length === 0 ? (
@@ -308,6 +311,53 @@ function WorkspacePanelContent({
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AddMemberSection({
+  workspaceId,
+  onAdded,
+}: {
+  workspaceId: string;
+  onAdded: (...args: any[]) => void;
+}) {
+  const [email, setEmail] = useState('');
+  const { trigger: addMember, isMutating } = useMutation({
+    mutation: adminAddWorkspaceMemberMutation,
+  });
+
+  const handleAdd = useCallback(async () => {
+    if (!email.trim()) return;
+    try {
+      await addMember({ workspaceId, email: email.trim() });
+      toast.success(`Added ${email} to workspace`);
+      setEmail('');
+      onAdded(adminWorkspaceQuery);
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to add member');
+    }
+  }, [email, workspaceId, addMember, onAdded]);
+
+  return (
+    <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-2">
+      <div className="text-sm font-medium">Add Member</div>
+      <div className="flex gap-2">
+        <Input
+          placeholder="user@example.com"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleAdd()}
+          className="flex-1 h-8 text-sm"
+        />
+        <button
+          onClick={handleAdd}
+          disabled={isMutating || !email.trim()}
+          className="px-3 h-8 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+        >
+          {isMutating ? '...' : 'Add'}
+        </button>
       </div>
     </div>
   );

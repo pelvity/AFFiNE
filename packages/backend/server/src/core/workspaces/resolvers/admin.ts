@@ -32,6 +32,7 @@ import {
   WorkspaceMemberStatus,
   WorkspaceRole,
 } from '../../../models';
+import { WorkspaceMemberSource } from '@prisma/client';
 import { Admin } from '../../common';
 import { WorkspaceUserType } from '../../user';
 import { TimeWindow } from './analytics-types';
@@ -695,6 +696,25 @@ export class AdminWorkspaceResolver {
       return null;
     }
     return row;
+  }
+
+  @Mutation(() => Boolean, {
+    description: 'Add a user to a workspace by email (admin only)',
+  })
+  async adminAddWorkspaceMember(
+    @Args('workspaceId') workspaceId: string,
+    @Args('email') email: string,
+    @Args('role', { type: () => WorkspaceRole, defaultValue: WorkspaceRole.Collaborator })
+    role: WorkspaceRole
+  ): Promise<boolean> {
+    const user = await this.models.user.getPublicUserByEmail(email);
+    if (!user) throw new NotFoundException(`User with email ${email} not found`);
+
+    await this.models.workspaceUser.set(workspaceId, user.id, role, {
+      status: WorkspaceMemberStatus.Accepted,
+      source: WorkspaceMemberSource.Email,
+    });
+    return true;
   }
 
   private mapSort(orderBy?: AdminWorkspaceSort) {
